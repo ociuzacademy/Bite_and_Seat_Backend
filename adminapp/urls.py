@@ -1,0 +1,45 @@
+from django.urls import path
+from . import views
+from .views import admin_login_view
+from django.shortcuts import render
+from .views import add_category_view, category_list_view
+from .views import time_slot_list, add_time_slot, edit_time_slot, delete_time_slot
+
+
+urlpatterns = [
+   path('', admin_login_view, name='admin_login'),
+   path('admin_dashboard/',views.admin_dashboard, name='admin_dashboard'),
+   path('add_category/', add_category_view, name='add_category'),
+   path('category_list/', category_list_view, name='category_list'),
+   path('category/edit/<int:category_id>/', views.edit_category_view, name='edit_category'),
+   path('category/delete/<int:category_id>/', views.delete_category_view, name='delete_category'),
+   path('menu/', views.menu_list, name='menu_list'),
+   path('menu/add/', views.add_menu_item, name='add_menu'),
+   path('menu/delete/<int:item_id>/', views.delete_menu_item, name='delete_menu'),
+   path('menu/edit/<int:item_id>/', views.edit_menu_item, name='edit_menu'),
+   path('add-daily-menu/', views.add_daily_menu, name='add_daily_menu'),
+    path('daily-menu-list/', views.daily_menu_list, name='daily_menu_list'),
+   path('timeslots/', time_slot_list, name='time_slot_list'),
+   path('timeslots/add/', add_time_slot, name='add_time_slot'),
+   path('timeslots/edit/<int:slot_id>/', edit_time_slot, name='edit_time_slot'),
+   path('timeslots/delete/<int:slot_id>/', delete_time_slot, name='delete_time_slot'),
+   path('tables/', views.table_list, name='table_list'),
+   path('tables/add/', views.add_table, name='add_table'),
+   path('tables/edit/<int:table_id>/', views.edit_table, name='edit_table'),
+   path('tables/delete/<int:table_id>/', views.delete_table, name='delete_table'),
+   path('tables/<int:table_id>/seats/', views.view_seats, name='view_seats'),
+   path('edit-daily-menu/<int:id>/', views.edit_daily_menu, name='edit_daily_menu'),
+   path('delete-daily-menu/<int:id>/', views.delete_daily_menu, name='delete_daily_menu'),
+   path('orders/', views.admin_all_orders, name='admin_all_orders'),
+   path('orders/<int:order_id>/', views.admin_order_details, name='admin_order_details'),
+   path('reports/', views.admin_view_all_reports, name='admin_view_all_reports'),
+   path('feedbacks/', views.admin_view_all_feedbacks, name='admin_view_all_feedbacks'),
+   path('view_scanner_data/',views.view_scanner_data,name='view_scanner_data'),
+
+   
+]
+
+
+
+
+
