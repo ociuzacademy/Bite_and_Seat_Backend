@@ -400,17 +400,24 @@ def update_step2(request, order_id):
 # 💚 Step 3: Update table and seats
 @api_view(['PUT'])
 def update_step3(request, order_id):
-   
+    """
+    Step 3: Assign multiple tables & seats for the given order.
+    Prevents double booking of seats on the same date.
+    """
     try:
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Ensure order has a date
+    if not order.date:
+        return Response({"error": "Booking date not set for this order."}, status=status.HTTP_400_BAD_REQUEST)
+
     tables_data = request.data.get('tables', [])
     if not tables_data:
         return Response({"error": "No tables provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 🧹 Clear previously booked seats
+    # Clear old seats for this order
     OrderSeat.objects.filter(order=order).delete()
 
     total_charge = Decimal('0.00')
@@ -421,52 +428,50 @@ def update_step3(request, order_id):
         seat_ids = table_info.get('seat_ids', [])
 
         if not table_id or not seat_ids:
-            return Response({"error": "Each table must have seat_ids"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Each table must include table_id and seat_ids."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             table = Table.objects.get(id=table_id)
         except Table.DoesNotExist:
             return Response({"error": f"Table {table_id} not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Save table reference
         booked_tables.append({"table_id": table_id, "seat_ids": seat_ids})
 
         for seat_id in seat_ids:
             try:
-                seat = Seat.objects.get(id=seat_id, table=table, is_occupied=False)
-                total_charge += Decimal(seat.seat_price)
+                seat = Seat.objects.get(id=seat_id, table=table)
+
+                # ✅ Check if this seat is already booked on this same date
+                if OrderSeat.objects.filter(seat=seat, order__date=order.date).exists():
+                    return Response(
+                        {"error": f"Seat {seat.id} in Table {table.id} is already booked on {order.date}"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Book it
                 OrderSeat.objects.create(order=order, seat=seat)
-                seat.is_occupied = True
-                seat.save()
+                total_charge += Decimal(seat.seat_price or 0)
+
             except Seat.DoesNotExist:
                 return Response(
-                    {"error": f"Seat {seat_id} in Table {table_id} not available"},
+                    {"error": f"Seat {seat_id} in Table {table_id} not found."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-    # ✅ Save JSON of all booked tables
+    # Save table and total info
     order.tables = booked_tables
     order.table_charge = total_charge
     order.update_total()
     order.save()
 
-    # Refresh and serialize
-    order = (
-        Order.objects
-        .select_related('category', 'user')
-        .prefetch_related('order_seats__seat', 'items__food_item')
-        .get(id=order_id)
-    )
-
     serializer = OrderSerializer(order)
-    return Response(
-        {
-            "message": "Step 3 completed (multiple tables booked)",
-            "order": serializer.data
-        },
-        status=status.HTTP_200_OK
-    )
-
+    return Response({
+        "message": "Step 3 completed successfully — seats booked for the selected date.",
+        "order": serializer.data
+    }, status=status.HTTP_200_OK)
 # 🧾 Final Step: Finalize order (COD or payment)
 # @api_view(['GET'])
 # def finalize_order(request, order_id):
