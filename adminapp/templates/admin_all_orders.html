@@ -60,27 +60,19 @@
     background-color: rgba(8, 114, 114, 0.05);
   }
 
-  /* 🔍 View button */
   .btn-outline-primary {
     color: var(--primary-color);
     border-color: var(--primary-color);
     transition: all 0.3s ease;
   }
 
-  .btn-outline-primary:hover,
-  .btn-outline-primary:focus,
-  .btn-outline-primary:active {
-    background-color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    color: #fff !important;
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
     box-shadow: 0 0 8px rgba(8, 114, 114, 0.3);
   }
 
-  .btn-outline-primary:focus-visible {
-    outline: none !important;
-  }
-
-  /* 🍽️ Select Food button */
   .btn-success {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
@@ -92,22 +84,6 @@
     border-color: var(--primary-dark);
   }
 
-  /* Badge colors */
-  .badge.bg-info {
-    background-color: var(--primary-light) !important;
-    color: var(--primary-dark) !important;
-  }
-
-  .badge.bg-success {
-    background-color: var(--primary-color) !important;
-    color: #fff !important;
-  }
-
-  .text-muted {
-    font-style: italic;
-  }
-
-  /* Table and text polish */
   th, td {
     vertical-align: middle !important;
   }
@@ -120,7 +96,6 @@
   .table td strong {
     color: var(--primary-dark);
   }
-
 </style>
 
 <div class="page-container d-flex justify-content-center">
@@ -128,7 +103,7 @@
 
     <!-- Header -->
     <div class="page-header mb-4">
-      <h3> All Orders</h3>
+      <h3>All Orders</h3>
       <span class="badge badge-count px-3 py-2 fs-6">
         Total Orders: {{ orders|length }}
       </span>
@@ -163,7 +138,7 @@
               {% endif %}
             </td>
             <td>{{ order.date }}</td>
-            <td>{{ order.time_slot }}</td>
+            <td>{{ order.time_slot|default:"None" }}</td>
             <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
             <td>
               <div class="btn-group">
@@ -171,7 +146,8 @@
                    class="btn btn-sm btn-outline-primary fw-semibold">
                    🔍 View
                 </a>
-                {% if order.booking_type == 'TABLE_ONLY' %}
+                
+                {% if order.booking_type == 'TABLE_ONLY' and order.items.all|length == 0 %}
                   <a href="{% url 'admin_select_food' order.id %}" 
                      class="btn btn-sm btn-success fw-semibold"
                      title="Add food items to this table booking">
