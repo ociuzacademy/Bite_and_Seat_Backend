@@ -31,11 +31,11 @@ urlpatterns = [
    path('edit-daily-menu/<int:id>/', views.edit_daily_menu, name='edit_daily_menu'),
    path('delete-daily-menu/<int:id>/', views.delete_daily_menu, name='delete_daily_menu'),
    path('orders/', views.admin_all_orders, name='admin_all_orders'),
-   path('orders/<int:order_id>/', views.admin_order_details, name='admin_order_details'),
+   path('orders/<int:order_id>/', views.admin_order_detail, name='admin_order_detail'),
    path('reports/', views.admin_view_all_reports, name='admin_view_all_reports'),
    path('feedbacks/', views.admin_view_all_feedbacks, name='admin_view_all_feedbacks'),
    path('view_scanner_data/',views.view_scanner_data,name='view_scanner_data'),
-
+   path('select-food/<int:order_id>/', views.admin_select_food, name='admin_select_food'),
    
 ]
 

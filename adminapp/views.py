@@ -408,9 +408,58 @@ def admin_all_orders(request):
     orders = Order.objects.all().order_by('-date', '-id')
     return render(request, 'admin_all_orders.html', {'orders': orders})
 
-def admin_order_details(request, order_id):
+
+
+def admin_order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    return render(request, 'admin_order_details.html', {'order': order})
+    return render(request, 'admin_order_detail.html', {'order': order})
+
+from django.shortcuts import render, get_object_or_404, redirect
+from userapp.models import Order, OrderItem
+from adminapp.models import TblMenuItem, TblDailyMenu  # ✅ import these
+
+def admin_select_food(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == "POST":
+        selected_items = request.POST.getlist('food_items')
+        quantities = request.POST.getlist('quantities')
+
+        for i, item_id in enumerate(selected_items):
+            food_item = TblMenuItem.objects.get(id=item_id)
+            quantity = int(quantities[i])
+            total_price = food_item.rate * quantity
+
+            OrderItem.objects.create(
+                order=order,
+                food_item=food_item,  # use string field if OrderItem doesn’t FK TblMenuItem
+                quantity=quantity,
+                price=food_item.rate,
+                total_price=total_price
+            )
+
+        # update total
+        order.total_amount = sum(item.total_price for item in order.items.all())
+        order.save()
+        return redirect('admin_order_detail', order_id=order.id)
+
+    # show menu based on date
+    daily_menu = TblDailyMenu.objects.filter(date=order.date).first()
+    food_items = daily_menu.items.all() if daily_menu else []
+
+    return render(request, 'admin_select_food.html', {
+        'order': order,
+        'food_items': food_items
+    })
+
+
+
+
+
+
+
+
+
 
 
 from django.shortcuts import render, redirect
@@ -421,6 +470,7 @@ def admin_view_all_reports(request):
     # Get all reports (latest first)
     reports = Report.objects.select_related('user').order_by('-id')
     return render(request, 'admin_view_reports.html', {'reports': reports})
+
 
 
 from django.shortcuts import render
