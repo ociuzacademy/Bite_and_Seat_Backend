@@ -1,0 +1,110 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+<style>
+    .menu-edit-container {
+        max-width: 700px;
+        margin: 40px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 35px 45px;
+    }
+
+    .menu-edit-container h2 {
+        color: #007bff;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #444;
+    }
+
+    .form-check {
+        margin-bottom: 8px;
+        padding-left: 1.8em;
+    }
+
+    .form-check-input {
+        margin-top: 4px;
+        margin-left: -1.8em;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-weight: 600;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border: none;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+    }
+
+    .btn-secondary {
+        margin-left: 10px;
+        background-color: #6c757d;
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+</style>
+
+<div class="menu-edit-container">
+    <h2>Edit Daily Menu</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input 
+                type="date" 
+                name="date" 
+                class="form-control shadow-sm" 
+                value="{{ menu.date|date:'Y-m-d' }}" 
+                required
+            >
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Select Menu Items</label>
+            <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">
+                {% for item in items %}
+                    <div class="form-check">
+                        <input 
+                            type="checkbox" 
+                            name="items" 
+                            value="{{ item.id }}" 
+                            id="item{{ item.id }}" 
+                            class="form-check-input"
+                            {% if item in menu.items.all %}checked{% endif %}
+                        >
+                        <label for="item{{ item.id }}" class="form-check-label">
+                            {{ item.name }}
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success">💾 Update Menu</button>
+            <a href="{% url 'daily_menu_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

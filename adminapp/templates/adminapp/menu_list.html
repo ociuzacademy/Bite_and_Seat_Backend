@@ -1,0 +1,125 @@
+{% extends 'adminapp/dashboard.html' %}
+{% load static %}
+{% block content %}
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #088080;
+            color: white;
+        }
+
+        td img {
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            text-decoration: none;
+            color: #088080;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .add-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #088080;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background-color: #218838;
+        }
+
+        .delete-btn {
+            color: red;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+
+<div class="container">
+    <h2 class="mb-4 fw-bold" style="color: #088080;">All Menu Items</h2>
+
+    <table>
+        <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Rate</th>
+            <th>Item/Plate</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for item in items %}
+        <tr>
+            <td>
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" width="80" height="80" alt="{{ item.name }}">
+                {% else %}
+                    <img src="{% static 'images/default-food.jpg' %}" width="80" height="80" alt="No Image">
+                {% endif %}
+            </td>
+            <td>{{ item.name }}</td>
+            <td>₹{{ item.rate }}</td>
+            <td>{{ item.item_per_plate }}</td>
+            <td>{{ item.category.name }}</td>
+            <td>
+                <a href="{% url 'edit_menu' item.id %}">Edit</a> |
+                <a href="{% url 'delete_menu' item.id %}" class="delete-btn">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="no-data">No items in menu.</td></tr>
+        {% endfor %}
+    </table>
+
+    <div style="text-align: right;">
+        <a href="{% url 'add_menu' %}" class="add-btn">+ Add New Item</a>
+    </div>
+</div>
+{% endblock %}

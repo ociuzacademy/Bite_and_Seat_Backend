@@ -1,0 +1,52 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<div class="container py-5">
+  <div class="p-4 shadow-lg rounded bg-white">
+    <h2 class="fw-bold mb-4 text-center" style="color: #088080;">All User Reports</h2>
+
+    {% if reports %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle border">
+        <thead style="background-color:#088080; color:white;">
+          <tr>
+            <th>#</th>
+            <!-- <th>User</th> -->
+            <th>Category</th>
+            <th>Description</th>
+            <th>Images</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for report in reports %}
+          <tr>
+            <td>{{ report.id }}</td>
+            <!-- <td>{{ report.user.username }}</td> -->
+            <td>{{ report.category }}</td>
+            <td>{{ report.description }}</td>
+
+            <td>
+              {% for img in report.images.all %}
+                <img src="{{ img.image.url }}" width="70" height="70" class="rounded mb-1">
+              {% empty %}
+                <span class="text-muted">No Images</span>
+              {% endfor %}
+            </td>
+
+            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+    {% else %}
+    <p class="text-center text-muted">No reports found.</p>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

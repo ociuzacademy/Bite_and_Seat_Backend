@@ -1,0 +1,102 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+<style>
+    .edit-slot-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background: #ffffff;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .edit-slot-container h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+        font-weight: 700;
+    }
+
+    form label {
+        display: block;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+        margin-top: 15px;
+    }
+
+    form input,
+    form select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.2s;
+    }
+
+    form input:focus,
+    form select:focus {
+        border-color: #007bff;
+        outline: none;
+    }
+
+    button {
+        display: block;
+        width: 100%;
+        margin-top: 25px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="edit-slot-container">
+    <h2>Edit Time Slot</h2>
+    <form method="POST">
+        {% csrf_token %}
+        
+        <label>Category:</label>
+        <select name="category" required>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if slot.category.id == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Start Time:</label>
+        <input type="time" name="start_time" value="{{ slot.start_time|time:'H:i' }}" required>
+
+        <label>End Time:</label>
+        <input type="time" name="end_time" value="{{ slot.end_time|time:'H:i' }}" required>
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <a href="{% url 'time_slot_list' %}" class="back-link">← Back to List</a>
+</div>
+{% endblock %}

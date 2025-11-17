@@ -1,0 +1,33 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+<h2>Seats for {{ table.table_name }}</h2>
+<p>Total Seats: {{ table.number_of_seats }}</p>
+<p>Price per Seat: ₹5.00</p>
+<p>Total Table Price: ₹{{ table.total_price }}</p>
+<hr>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Seat No</th>
+    <th>Price</th>
+    <th>Status</th>
+  </tr>
+
+  {% for seat in seats %}
+  <tr>
+    <td>{{ seat.seat_number }}</td>
+    <td>₹{{ seat.seat_price }}</td>
+    <td>
+      {% if seat.is_occupied %}
+        <span style="color:red;font-weight:bold;">Occupied</span>
+      {% else %}
+        <span style="color:green;font-weight:bold;">Not Occupied</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<br>
+<a href="{% url 'table_list' %}">🔙 Back</a>
+{% endblock %}

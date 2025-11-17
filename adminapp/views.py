@@ -4,25 +4,36 @@ from django.shortcuts import render
 from django.shortcuts import render, redirect
 from .models import Tbl_Admin
 
+from django.shortcuts import render, redirect
+from .models import Tbl_Admin
+
 def admin_login_view(request):
+    entered_data = None  # To send data to template
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 
+
         try:
             admin = Tbl_Admin.objects.get(username=username, password=password)
             request.session['admin_id'] = admin.id
-            # Redirect to admin dashboard or home page after login
-            return redirect('admin_dashboard')
+            return render(request, 'adminapp/dashboard.html')
+
         except Tbl_Admin.DoesNotExist:
-            return render(request, 'login.html', {'error': 'Invalid username or password'})
+            return render(
+                request,
+                'adminapp/login.html',
+                {
+                    'error': 'Invalid username or password',
+                    'entered_data': entered_data
+                }
+            )
 
-    # GET request: just show login form
-    return render(request, 'login.html')
-
+    return render(request, 'adminapp/login.html')
 
 def admin_dashboard(request):
-    return render(request,'dashboard.html')
+    return render(request,'adminapp/dashboard.html')
 
 
 
@@ -43,12 +54,12 @@ def add_category_view(request):
         else:
             error = "Name field cannot be empty."
 
-    return render(request, 'add_category.html', {'error': error})
+    return render(request, 'adminapp/add_category.html', {'error': error})
 
 
 def category_list_view(request):
     categories = Category.objects.all()
-    return render(request, 'category_list.html', {'categories': categories})
+    return render(request, 'adminapp/category_list.html', {'categories': categories})
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -66,9 +77,9 @@ def edit_category_view(request, category_id):
             return redirect('category_list')
         else:
             error = "Name cannot be empty."
-            return render(request, 'edit_category.html', {'category': category, 'error': error})
+            return render(request, 'adminapp/edit_category.html', {'category': category, 'error': error})
 
-    return render(request, 'edit_category.html', {'category': category})
+    return render(request, 'adminapp/edit_category.html', {'category': category})
 
 
 # Delete Category
@@ -80,7 +91,7 @@ def delete_category_view(request, category_id):
         return redirect('category_list')
 
     # Confirmation page for GET request
-    return render(request, 'delete_category.html', {'category': category})
+    return render(request, 'adminapp/delete_category.html', {'category': category})
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -106,7 +117,7 @@ def add_menu_item(request):
 
         return redirect('menu_list')
 
-    return render(request, 'add_menu.html', {'categories': categories})
+    return render(request, 'adminapp/add_menu.html', {'categories': categories})
 
 
 
@@ -142,7 +153,7 @@ def add_daily_menu(request):
         messages.success(request, f"Daily menu for {weekday} ({date_obj}) saved successfully!")
         return redirect('daily_menu_list')
 
-    return render(request, 'add_daily_menu.html', {'items': items})
+    return render(request, 'adminapp/add_daily_menu.html', {'items': items})
 
 
 from django.shortcuts import get_object_or_404
@@ -175,7 +186,7 @@ def edit_daily_menu(request, id):
         messages.success(request, f"Daily menu for {weekday} ({date_obj}) updated successfully!")
         return redirect('daily_menu_list')
 
-    return render(request, 'edit_daily_menu.html', {
+    return render(request, 'adminapp/edit_daily_menu.html', {
         'menu': daily_menu,
         'items': items,
     })
@@ -198,13 +209,13 @@ def delete_daily_menu(request, id):
 
 def daily_menu_list(request):
     menus = TblDailyMenu.objects.all().order_by('-date')
-    return render(request, 'daily_menu_list.html', {'menus': menus})
+    return render(request, 'adminapp/daily_menu_list.html', {'menus': menus})
 
 
 
 def menu_list(request):
     items = TblMenuItem.objects.all()
-    return render(request, 'menu_list.html', {'items': items})
+    return render(request, 'adminapp/menu_list.html', {'items': items})
 
 
 def delete_menu_item(request, item_id):
@@ -232,7 +243,7 @@ def edit_menu_item(request, item_id):
         item.save()
         return redirect('menu_list')
 
-    return render(request, 'edit_menu.html', {
+    return render(request, 'adminapp/edit_menu.html', {
         'item': item,
         'categories': categories
     })
@@ -265,7 +276,7 @@ def time_slot_list(request):
     )
 
     slots = TblTimeSlot.objects.all().order_by(order_priority, 'start_time')
-    return render(request, 'time_slot_list.html', {'slots': slots})
+    return render(request, 'adminapp/time_slot_list.html', {'slots': slots})
 
 
 # -------------------------------
@@ -307,7 +318,7 @@ def add_time_slot(request):
         messages.success(request, "Time slots added successfully!")
         return redirect('time_slot_list')
 
-    return render(request, 'add_time_slot.html', {'categories': categories})
+    return render(request, 'adminapp/add_time_slot.html', {'categories': categories})
 
 
 # -------------------------------
@@ -327,7 +338,7 @@ def edit_time_slot(request, slot_id):
         messages.success(request, "Time slot updated successfully!")
         return redirect('time_slot_list')
 
-    return render(request, 'edit_time_slot.html', {'slot': slot, 'categories': categories})
+    return render(request, 'adminapp/edit_time_slot.html', {'slot': slot, 'categories': categories})
 
 
 # -------------------------------
@@ -348,7 +359,7 @@ from .models import Table
 # Show all tables
 def table_list(request):
     tables = Table.objects.all()
-    return render(request, 'table_list.html', {'tables': tables})
+    return render(request, 'adminapp/table_list.html', {'tables': tables})
 
 # Add new table
 def add_table(request):
@@ -363,7 +374,7 @@ def add_table(request):
         except Exception as e:
             messages.error(request, str(e))
 
-    return render(request, 'add_table.html')
+    return render(request, 'adminapp/add_table.html')
 
 # Edit table
 def edit_table(request, table_id):
@@ -382,7 +393,7 @@ def edit_table(request, table_id):
         except Exception as e:
             messages.error(request, str(e))
 
-    return render(request, 'edit_table.html', {'table': table})
+    return render(request, 'adminapp/edit_table.html', {'table': table})
 
 # Delete table
 def delete_table(request, table_id):
@@ -395,7 +406,7 @@ def delete_table(request, table_id):
 def view_seats(request, table_id):
     table = get_object_or_404(Table, id=table_id)
     seats = table.seats.all()
-    return render(request, 'seat_list.html', {'table': table, 'seats': seats})
+    return render(request, 'adminapp/seat_list.html', {'table': table, 'seats': seats})
 
 
 
@@ -406,13 +417,13 @@ from userapp.models import Order
 def admin_all_orders(request):
     # Show the latest orders first — newest date (and id) at the top
     orders = Order.objects.all().order_by('-date', '-id')
-    return render(request, 'admin_all_orders.html', {'orders': orders})
+    return render(request, 'adminapp/admin_all_orders.html', {'orders': orders})
 
 
 
 def admin_order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    return render(request, 'admin_order_detail.html', {'order': order})
+    return render(request, 'adminapp/admin_order_detail.html', {'order': order})
 
 from django.shortcuts import render, get_object_or_404, redirect
 from userapp.models import Order, OrderItem
@@ -447,7 +458,7 @@ def admin_select_food(request, order_id):
     daily_menu = TblDailyMenu.objects.filter(date=order.date).first()
     food_items = daily_menu.items.all() if daily_menu else []
 
-    return render(request, 'admin_select_food.html', {
+    return render(request, 'adminapp/admin_select_food.html', {
         'order': order,
         'food_items': food_items
     })
@@ -464,14 +475,40 @@ def admin_select_food(request, order_id):
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from userapp.models import Report  # ✅ import from userapp
+from userapp.models import UserReport  # ✅ import from userapp
+from django.shortcuts import render
+from userapp.models import UserReport
 
-def admin_view_all_reports(request):
-    # Get all reports (latest first)
-    reports = Report.objects.select_related('user').order_by('-id')
-    return render(request, 'admin_view_reports.html', {'reports': reports})
+from django.shortcuts import render
+from userapp.models import UserReport
+from django.shortcuts import render
+from userapp.models import UserReport
+# from django.db import connection
 
+# def admin_view_all_reports(request):
+#     print("DB in use (view):", connection.settings_dict['NAME'])
+#     reports = (
+#         UserReport.objects
+#         .select_related('user')
+#         .prefetch_related('images')
+#         .order_by('-id')
+#     )
+#     print("Reports count in view:", reports.count())
+#     print("Reports queryset in view:", list(reports))
+#     return render(request, 'adminapp/admin_view_reports.html', {'reports': reports})
 
+# adminapp/views.py
+
+from django.shortcuts import render
+# from django.contrib.auth.decorators import login_required
+from userapp.models import UserReport
+
+from django.shortcuts import render
+from userapp.models import UserReport
+
+def reports_list(request):
+    reports = UserReport.objects.all().order_by("-created_at")  # latest first
+    return render(request, "adminapp/admin_view_reports.html", {"reports": reports})
 
 from django.shortcuts import render
 from userapp.models import Feedback  # adjust import path if Feedback is in userapp
@@ -479,7 +516,7 @@ from userapp.models import Feedback  # adjust import path if Feedback is in user
 def admin_view_all_feedbacks(request):
     """Admin can view all feedbacks, latest first"""
     feedbacks = Feedback.objects.select_related('user', 'order').order_by('-created_at')
-    return render(request, 'admin_view_feedbacks.html', {'feedbacks': feedbacks})
+    return render(request, 'adminapp/admin_view_feedbacks.html', {'feedbacks': feedbacks})
 
 
 def view_scanner_data(request):

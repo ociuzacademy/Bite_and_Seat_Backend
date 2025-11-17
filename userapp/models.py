@@ -89,7 +89,7 @@ class Order(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
 
-    time_slot = models.CharField(max_length=50, null=True, blank=True)
+    time_slot = models.ForeignKey(TblTimeSlot,on_delete=models.CASCADE, null=True, blank=True)
     number_of_persons = models.PositiveIntegerField(null=True, blank=True)
 
     # Instead of ManyToMany seats — link to table only
@@ -112,6 +112,7 @@ class Order(models.Model):
         return f"Order #{self.id} - {self.user.username} ({self.get_booking_type_display()})"
 
 
+        
 class OrderSeat(models.Model):
     """Stores seats booked for a particular order."""
     order = models.ForeignKey(Order, related_name='order_seats', on_delete=models.CASCADE)
@@ -179,10 +180,80 @@ class Payment(models.Model):
 
 
 
+from django.db import models
+from django.contrib.auth.models import User
+
 class Report(models.Model):
-    user= models.ForeignKey(User,on_delete=models.CASCADE)
-    report_content= models.CharField(max_length=500)
-    image= models.ImageField(upload_to='report_images/',blank=True,null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.CharField(max_length=50)      # String category
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"Report #{self.id} - {self.category}"
+
+
+class ReportImage(models.Model):
+    report = models.ForeignKey(Report, related_name="images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="report_images/")
+
+    def __str__(self):
+        return f"Image for Report #{self.report.id}"
+    
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class TblReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.CharField(max_length=50)      # String category
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"Report #{self.id} - {self.category}"
+
+
+class TblReportImage(models.Model):
+    report = models.ForeignKey(Report, related_name="report_images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="report_images/")
+
+    def __str__(self):
+        return f"Image for Report #{self.report.id}"
+    
+
+
+
+
+from django.db import models
+
+from userapp.models import User  # your custom user model
+
+class UserReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.CharField(max_length=50)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+    def __str__(self):
+        return f"Report #{self.id} - {self.category}"
+
+
+class UserReportImage(models.Model):
+    report = models.ForeignKey(UserReport, related_name="images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="report_images/")
+
+    def __str__(self):
+        return f"Image for Report #{self.report.id}"
+
+    
 
 
 
@@ -190,15 +261,44 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import User, Order  # adjust import as needed
 
+# class Feedback(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+#     rating = models.IntegerField(
+#         validators=[MinValueValidator(1), MaxValueValidator(5)]
+#     )
+#     feedback = models.TextField()
+#     image = models.ImageField(upload_to='feedback_images/', null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"Feedback by {self.user.username} for Order {self.order.id}"
+
+
 class Feedback(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    rating = models.IntegerField(
+
+    overall_rating = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    feedback = models.TextField()
-    image = models.ImageField(upload_to='feedback_images/', null=True, blank=True)
+
+    comments = models.TextField(null=True, blank=True)
+    # image = models.ImageField(upload_to='feedback_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Feedback by {self.user.username} for Order {self.order.id}"
+        return f"Feedback by {self.user.username}"
+    
+class FeedbackItem(models.Model):
+    feedback = models.ForeignKey(
+        Feedback, on_delete=models.CASCADE, related_name="items"
+    )
+    food_item = models.ForeignKey(TblMenuItem, on_delete=models.CASCADE)
+
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+
+    def __str__(self):
+        return f"{self.food_item.name} - {self.rating}"

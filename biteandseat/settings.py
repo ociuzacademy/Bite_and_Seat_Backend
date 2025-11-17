@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'biteandseat.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'biteandseat_db',       # Replace with your MySQL database name
+        'NAME': 'db_biteandseat',       # Replace with your MySQL database name
         'USER': 'root',            # Replace with your MySQL username
         'PASSWORD': '',        # Replace with your MySQL password
         'HOST': 'localhost',                # Or the address of your MySQL server

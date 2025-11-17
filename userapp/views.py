@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SeatBookingSerializer, tbl_registerSerializer
-from .models import User
+from .models import User, UserReport, UserReportImage
 class RegisterUserAPI(APIView):
     def post(self, request):
         serializer = tbl_registerSerializer(data=request.data)
@@ -374,11 +374,13 @@ def update_step2(request, order_id):
     except TblTimeSlot.DoesNotExist:
         return Response({"error": "Invalid slot_id"}, status=status.HTTP_404_NOT_FOUND)
 
-    # ✅ Update the order
+    # ✅ FIXED: assign FK instance
+    order.time_slot = slot
     order.category = slot.category
-    order.time_slot = f"{slot.start_time} - {slot.end_time}"
+
     if num_persons:
         order.number_of_persons = num_persons
+
     order.save()
 
     serializer = OrderSerializer(order)
@@ -395,7 +397,6 @@ def update_step2(request, order_id):
         "order": serializer.data,
         "slot_details": slot_data
     }, status=status.HTTP_200_OK)
-
 
 # 💚 Step 3: Update table and seats
 @api_view(['PUT'])
@@ -444,13 +445,16 @@ def update_step3(request, order_id):
             try:
                 seat = Seat.objects.get(id=seat_id, table=table)
 
-                # ✅ Check if this seat is already booked on this same date
-                if OrderSeat.objects.filter(seat=seat, order__date=order.date).exists():
+                # ✅ Check if this seat is already booked on SAME date AND SAME time slot
+                if OrderSeat.objects.filter(
+                    seat=seat,
+                    order__date=order.date,
+                    order__time_slot=order.time_slot
+                ).exists():
                     return Response(
-                        {"error": f"Seat {seat.id} in Table {table.id} is already booked on {order.date}"},
+                        {"error": f"Seat {seat.id} in Table {table.id} is already booked on {order.date} at time slot {order.time_slot.id}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-
                 # Book it
                 OrderSeat.objects.create(order=order, seat=seat)
                 total_charge += Decimal(seat.seat_price or 0)
@@ -537,27 +541,49 @@ def user_profile(request, user_id=None):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-
-from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Report
-from .serializers import ReportSerializer
 from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import UserReport, UserReportImage
+from .serializers import ReportSerializer
+
 
 @api_view(['POST'])
-
 def create_report(request):
     """
-    Create a new report (supports image upload).
+    Create a user report with optional multiple images.
     """
-    serializer = ReportSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({
-            "message": "Report submitted successfully",
-            "report": serializer.data
-        }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    user = request.data.get("user")
+    category = request.data.get("category")
+    description = request.data.get("description")
+
+    if not user or not category or not description:
+        return Response(
+            {"error": "user, category, description are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # 1️⃣ Create the report
+    report = UserReport.objects.create(
+        user_id=user,
+        category=category,
+        description=description,
+    )
+
+    # 2️⃣ Handle images
+    images = request.FILES.getlist("images")
+    for img in images:
+        UserReportImage.objects.create(report=report, image=img)
+
+    # 3️⃣ Return serialized response
+    serializer = ReportSerializer(report)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 from rest_framework.decorators import api_view
@@ -651,7 +677,7 @@ def get_all_tables_and_seats(request):
         try:
             slot = TblTimeSlot.objects.get(id=time_slot_id)
             # Match time slot string (example: "10:00 AM - 12:00 PM")
-            order_filter["time_slot"] = f"{slot.start_time} - {slot.end_time}"
+            order_filter["time_slot_id"] = time_slot_id
         except TblTimeSlot.DoesNotExist:
             return Response({"error": "Invalid time_slot ID"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -699,26 +725,25 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Feedback, Order
-from .serializers import FeedbackSerializer
+from .serializers import FeedbackSerializer,FeedbackListSerializer
 @api_view(['POST'])
 def create_feedback(request):
-    """User submits feedback for an order"""
     serializer = FeedbackSerializer(data=request.data)
+
     if serializer.is_valid():
         serializer.save()
         return Response({
-            "status": "success",
-            "message": "Feedback submitted successfully!",
-            "data": serializer.data
+            "message": "Feedback submitted successfully"
         }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def get_user_feedback(request, user_id):
-    """Fetch all feedbacks submitted by a particular user"""
+    """Fetch all feedbacks submitted by a particular user, including item ratings."""
+
     feedbacks = Feedback.objects.filter(user_id=user_id).order_by('-created_at')
-    
+
     if not feedbacks.exists():
         return Response({
             "status": "success",
@@ -727,7 +752,8 @@ def get_user_feedback(request, user_id):
             "data": []
         }, status=status.HTTP_200_OK)
 
-    serializer = FeedbackSerializer(feedbacks, many=True)
+    serializer = FeedbackListSerializer(feedbacks, many=True)
+
     return Response({
         "status": "success",
         "user_id": user_id,

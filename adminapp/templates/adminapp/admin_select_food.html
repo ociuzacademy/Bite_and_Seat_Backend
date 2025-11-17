@@ -1,0 +1,151 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #087272;
+    --primary-light: #e0f4f3;
+    --primary-hover: #065d5d;
+  }
+
+  .select-food-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .select-food-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-primary {
+    color: var(--primary-color) !important;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+
+  .btn-outline-secondary {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+
+  .table thead {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  .table-bordered td, .table-bordered th {
+    border-color: #c9e7e6;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 1;
+  }
+
+  hr {
+    border: 1px solid var(--primary-light);
+  }
+
+  input.form-control {
+    border: 1px solid #b6e0df;
+  }
+
+  input.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(8, 114, 114, 0.15);
+  }
+</style>
+
+<div class="container py-5 d-flex justify-content-center">
+  <div class="select-food-card w-100" style="max-width: 900px;">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="text-primary fw-bold mb-0">
+         Select Food for Order #{{ order.id }}
+      </h2>
+      <a href="{% url 'admin_all_orders' %}" class="btn btn-outline-secondary fw-semibold">
+        ← Back to Orders
+      </a>
+    </div>
+
+    <!-- Order Info -->
+    <div class="mb-4">
+      <p><strong class="text-primary">User:</strong> {{ order.user.username }}</p>
+      <p><strong class="text-primary">Booking Type:</strong> {{ order.get_booking_type_display }}</p>
+      <p><strong class="text-primary">Date:</strong> {{ order.date }}</p>
+      <p><strong class="text-primary">Time Slot:</strong> {{ order.time_slot }}</p>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Food Selection Form -->
+    <form method="POST">
+      {% csrf_token %}
+      <h4 class="mb-3 text-primary fw-semibold">Available Food Items</h4>
+
+      {% if food_items %}
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle text-center">
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>Food Item</th>
+                <th>Category</th>
+                <th>Price (₹)</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in food_items %}
+              <tr>
+                <td>
+                  <input type="checkbox" name="food_items" value="{{ item.id }}" class="form-check-input">
+                </td>
+                <td class="fw-semibold">{{ item.name }}</td>
+                <td>{{ item.category.name }}</td>
+                <td>₹{{ item.rate }}</td>
+                <td>
+                  <input type="number" name="quantities" min="1" value="1" 
+                         class="form-control text-center" 
+                         style="width: 80px; margin: auto;">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted text-center fs-5 py-3">
+          No food items available for this date.
+        </p>
+      {% endif %}
+
+      <!-- Save Button -->
+      <div class="text-end mt-4">
+        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+           Save Selected Items
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

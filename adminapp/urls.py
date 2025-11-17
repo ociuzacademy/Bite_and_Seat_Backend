@@ -7,8 +7,8 @@ from .views import time_slot_list, add_time_slot, edit_time_slot, delete_time_sl
 
 
 urlpatterns = [
-   path('', admin_login_view, name='admin_login'),
-   path('admin_dashboard/',views.admin_dashboard, name='admin_dashboard'),
+   path('admin_login/', admin_login_view, name='admin_login'),
+   path('',views.admin_dashboard, name='admin_dashboard'),
    path('add_category/', add_category_view, name='add_category'),
    path('category_list/', category_list_view, name='category_list'),
    path('category/edit/<int:category_id>/', views.edit_category_view, name='edit_category'),
@@ -32,7 +32,7 @@ urlpatterns = [
    path('delete-daily-menu/<int:id>/', views.delete_daily_menu, name='delete_daily_menu'),
    path('orders/', views.admin_all_orders, name='admin_all_orders'),
    path('orders/<int:order_id>/', views.admin_order_detail, name='admin_order_detail'),
-   path('reports/', views.admin_view_all_reports, name='admin_view_all_reports'),
+   path('reports/', views.reports_list, name='admin_view_all_reports'),
    path('feedbacks/', views.admin_view_all_feedbacks, name='admin_view_all_feedbacks'),
    path('view_scanner_data/',views.view_scanner_data,name='view_scanner_data'),
    path('select-food/<int:order_id>/', views.admin_select_food, name='admin_select_food'),

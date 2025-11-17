@@ -1,0 +1,106 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+<style>
+  .add-table-container {
+    max-width: 550px;
+    margin: 50px auto;
+    background: #ffffff;
+    padding: 35px 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .add-table-container h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #088080;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+    color: #333;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 16px;
+    border: 1.8px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.3s ease;
+  }
+
+  input[type="text"]:focus, select:focus {
+    border-color: #088080;
+    box-shadow: 0 0 8px rgba(8, 128, 128, 0.3);
+  }
+
+  button[type="submit"] {
+    width: 100%;
+    background: #088080;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+  }
+
+  button[type="submit"]:hover {
+    background: #066666;
+    transform: scale(1.02);
+  }
+
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #088080;
+    text-decoration: none;
+    transition: 0.3s;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<div class="add-table-container">
+  <h2>Add New Table</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label>Table Name:</label>
+      <input type="text" name="table_name" placeholder="Enter table name" required>
+    </div>
+
+    <div class="mb-3">
+      <label>Number of Seats:</label>
+      <select name="number_of_seats" required>
+        <option value="" disabled selected>-- Select Seats --</option>
+        <option value="2">2 Seats</option>
+        <option value="4">4 Seats</option>
+        <option value="6">6 Seats</option>
+      </select>
+    </div>
+
+    <button type="submit">Add Table</button>
+  </form>
+
+  <a href="{% url 'table_list' %}" class="back-link">← Back to Table List</a>
+</div>
+
+{% endblock %}

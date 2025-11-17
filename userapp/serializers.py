@@ -175,10 +175,23 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = '__all__' 
 
 
-class ReportSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from .models import UserReportImage,UserReport
+
+
+class ReportImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Report
-        fields = ['id', 'user', 'report_content', 'image']
+        model = UserReportImage
+        fields = ['id', 'image']
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    images = ReportImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserReport
+        fields = ['id', 'user', 'category', 'description', 'images', 'created_at']
+
 
 
 
@@ -257,10 +270,52 @@ class TablesSerializer(serializers.ModelSerializer):
         fields = ['id', 'table_name', 'number_of_seats', 'seats']
 
 
-from rest_framework import serializers
-from .models import Feedback
+# from rest_framework import serializers
+# from .models import Feedback
+
+# class FeedbackSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Feedback
+#         fields = ['id', 'user', 'order', 'rating', 'feedback', 'image', 'created_at']
+
+class FeedbackItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeedbackItem
+        fields = ['food_item', 'rating']
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    items = FeedbackItemSerializer(many=True, write_only=True)
+
     class Meta:
         model = Feedback
-        fields = ['id', 'user', 'order', 'rating', 'feedback', 'image', 'created_at']
+        fields = ['user', 'order', 'overall_rating', 'comments', 'items']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')  # Extract nested items
+        feedback = Feedback.objects.create(**validated_data)
+
+        for item in items_data:
+            FeedbackItem.objects.create(feedback=feedback, **item)
+
+        return feedback
+
+class FeedbackItemsSerializer(serializers.ModelSerializer):
+    food_item_name = serializers.CharField(source="food_item.name", read_only=True)
+
+    class Meta:
+        model = FeedbackItem
+        fields = ["food_item", "food_item_name", "rating"]
+
+class FeedbackListSerializer(serializers.ModelSerializer):
+    items = FeedbackItemsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Feedback
+        fields = [
+            "user",
+            "order",
+            "overall_rating",
+            "comments",
+            "items"
+        ]
