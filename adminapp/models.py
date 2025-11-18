@@ -60,7 +60,7 @@ class TimeSlot(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['category__name', 'start_time']  # Sort by category name and time

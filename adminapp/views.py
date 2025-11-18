@@ -283,42 +283,42 @@ def time_slot_list(request):
 # Add time slots (manual or auto 30-min slots)
 # -------------------------------
 def add_time_slot(request):
-    categories = Category.objects.all()
+    categories = Category.objects.exclude(name="Dinner")  # Remove Dinner category
 
     if request.method == 'POST':
-        # Example: automatic slot generation
-        meal_slots = {
-            'Breakfast': ('08:00', '11:00'),
-            'Lunch': ('12:00', '15:00'),
-            'Evening Snacks': ('16:00', '18:00'),
-            'Dinner': ('19:00', '22:00'),
-        }
+        category_id = request.POST.get('category')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
 
-        for meal_name, (start_str, end_str) in meal_slots.items():
-            # Safely get or create category
-            category, created = Category.objects.get_or_create(name=meal_name)
+        category = Category.objects.get(id=category_id)
 
-            start_time = datetime.strptime(start_str, '%H:%M')
-            end_time = datetime.strptime(end_str, '%H:%M')
+        # Convert to datetime objects
+        start_time = datetime.strptime(start_time_str, "%H:%M")
+        end_time = datetime.strptime(end_time_str, "%H:%M")
 
-            current_time = start_time
-            while current_time < end_time:
-                slot_start = current_time.time()
-                slot_end = (current_time + timedelta(minutes=30)).time()
-                if slot_end > end_time.time():
-                    slot_end = end_time.time()
+        # Remove existing slots for selected category (optional)
+        TblTimeSlot.objects.filter(category=category).delete()
 
-                TblTimeSlot.objects.create(
-                    category=category,
-                    start_time=slot_start,
-                    end_time=slot_end
-                )
-                current_time += timedelta(minutes=30)
+        current_time = start_time
+        while current_time < end_time:
+            slot_start = current_time.time()
+            slot_end = (current_time + timedelta(minutes=30)).time()
+
+            if slot_end > end_time.time():
+                slot_end = end_time.time()
+
+            TblTimeSlot.objects.create(
+                category=category,
+                start_time=slot_start,
+                end_time=slot_end,
+            )
+            current_time += timedelta(minutes=30)
 
         messages.success(request, "Time slots added successfully!")
         return redirect('time_slot_list')
 
     return render(request, 'adminapp/add_time_slot.html', {'categories': categories})
+
 
 
 # -------------------------------

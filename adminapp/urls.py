@@ -7,8 +7,8 @@ from .views import time_slot_list, add_time_slot, edit_time_slot, delete_time_sl
 
 
 urlpatterns = [
-   path('admin_login/', admin_login_view, name='admin_login'),
-   path('',views.admin_dashboard, name='admin_dashboard'),
+   path('', admin_login_view, name='admin_login'),
+   path('admin_dashboard/',views.admin_dashboard, name='admin_dashboard'),
    path('add_category/', add_category_view, name='add_category'),
    path('category_list/', category_list_view, name='category_list'),
    path('category/edit/<int:category_id>/', views.edit_category_view, name='edit_category'),
