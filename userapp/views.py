@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SeatBookingSerializer, UserSerializer
-from .models import TblUser, UserReport, UserReportImage
+from .models import *
 # class RegisterUserAPI(APIView):
 #     def post(self, request):
 #         serializer = UserSerializer(data=request.data)
@@ -563,7 +563,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import UserReport, UserReportImage
+# from .models import UserReport, UserReportImage
 from .serializers import ReportSerializer
 
 
@@ -584,7 +584,7 @@ def create_report(request):
         )
 
     # 1️⃣ Create the report
-    report = UserReport.objects.create(
+    report = Reporttbl.objects.create(
         user_id=user,
         category=category,
         description=description,
@@ -593,7 +593,7 @@ def create_report(request):
     # 2️⃣ Handle images
     images = request.FILES.getlist("images")
     for img in images:
-        UserReportImage.objects.create(report=report, image=img)
+        ReprotTblImage.objects.create(report=report, image=img)
 
     # 3️⃣ Return serialized response
     serializer = ReportSerializer(report)

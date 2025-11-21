@@ -38,4 +38,7 @@ urlpatterns = [
    path('select-food/<int:order_id>/', views.admin_select_food, name='admin_select_food'),
    path('admin/outsider-booking/',views.admin_book_outsider, name='admin_book_outsider'),
    path("aadd-user/", views.admin_add_user, name="admin_add_user"),
+   path('admin_view_users/', views.admin_view_users, name='admin_view_users'),
+   path('users/edit/<int:user_id>/', views.admin_edit_user, name='admin_edit_user'),
+   path('users/delete/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
 ]

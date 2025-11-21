@@ -193,62 +193,16 @@ class Payment(models.Model):
 
 
 
-from django.db import models
-from django.contrib.auth.models import User
 
-class Report(models.Model):
-    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
-    category = models.CharField(max_length=50)      # String category
-    description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    
+from userapp.models import TblUser
 
 
-    def __str__(self):
-        return f"Report #{self.id} - {self.category}"
 
-
-class ReportImage(models.Model):
-    report = models.ForeignKey(Report, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="report_images/")
-
-    def __str__(self):
-        return f"Image for Report #{self.report.id}"
     
 
-
-
-
-from django.db import models
-from django.contrib.auth.models import User
-
-class TblReport(models.Model):
-    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
-    category = models.CharField(max_length=50)      # String category
-    description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-    def __str__(self):
-        return f"Report #{self.id} - {self.category}"
-
-
-class TblReportImage(models.Model):
-    report = models.ForeignKey(Report, related_name="report_images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="report_images/")
-
-    def __str__(self):
-        return f"Image for Report #{self.report.id}"
-    
-
-
-
-
-from django.db import models
-
-from userapp.models import User  # your custom user model
-
-class UserReport(models.Model):
-    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
+class Reporttbl(models.Model):
+    user = models.ForeignKey(TblUser, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=50)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -259,15 +213,12 @@ class UserReport(models.Model):
         return f"Report #{self.id} - {self.category}"
 
 
-class UserReportImage(models.Model):
-    report = models.ForeignKey(UserReport, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="report_images/")
+class ReprotTblImage(models.Model):
+    report = models.ForeignKey(Reporttbl, related_name="report_images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="user_report_images/")
 
     def __str__(self):
         return f"Image for Report #{self.report.id}"
-
-    
-
 
 
 from django.db import models

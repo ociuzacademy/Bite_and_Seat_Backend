@@ -188,12 +188,12 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 from rest_framework import serializers
-from .models import UserReportImage,UserReport
+from .models import ReprotTblImage,Reporttbl
 
 
 class ReportImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserReportImage
+        model = ReprotTblImage
         fields = ['id', 'image']
 
 
@@ -201,7 +201,7 @@ class ReportSerializer(serializers.ModelSerializer):
     images = ReportImageSerializer(many=True, read_only=True)
 
     class Meta:
-        model = UserReport
+        model = Reporttbl
         fields = ['id', 'user', 'category', 'description', 'images', 'created_at']
 
 

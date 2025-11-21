@@ -505,14 +505,15 @@ def admin_select_food(request, order_id):
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from userapp.models import UserReport  # ✅ import from userapp
+# from userapp.models import UserReport  # ✅ import from userapp
 from django.shortcuts import render
-from userapp.models import UserReport
+# from userapp.models import UserReport
 
 from django.shortcuts import render
-from userapp.models import UserReport
+# from userapp.models import UserReport
 from django.shortcuts import render
-from userapp.models import UserReport
+# from userapp.models import UserReport
+from userapp.models import *
 # from django.db import connection
 
 # def admin_view_all_reports(request):
@@ -531,13 +532,13 @@ from userapp.models import UserReport
 
 from django.shortcuts import render
 # from django.contrib.auth.decorators import login_required
-from userapp.models import UserReport
+# from userapp.models import UserReport
 
 from django.shortcuts import render
-from userapp.models import UserReport
+# from userapp.models import UserReport
 
 def reports_list(request):
-    reports = UserReport.objects.all().order_by("-created_at")  # latest first
+    reports = Reporttbl.objects.all().order_by("-created_at")  # latest first
     return render(request, "adminapp/admin_view_reports.html", {"reports": reports})
 
 from django.shortcuts import render
@@ -728,3 +729,35 @@ def admin_add_user(request):
         return redirect("admin_add_user")
 
     return render(request, "adminapp/admin_add_user.html")
+
+
+def admin_view_users(request):
+    users = TblUser.objects.all().order_by('-id')
+    return render(request, 'adminapp/admin_view_users.html', {'users': users})
+
+
+def admin_edit_user(request, user_id):
+    user = get_object_or_404(TblUser, id=user_id)
+
+    if request.method == "POST":
+        user.username = request.POST.get("username")
+        user.password = request.POST.get("password")
+        user.user_type = request.POST.get("user_type")
+        user.department = request.POST.get("department")
+        user.batch_name = request.POST.get("batch_name") if user.user_type == "student" else None
+
+        if "profile_photo" in request.FILES:
+            user.profile_photo = request.FILES['profile_photo']
+
+        user.save()
+        messages.success(request, "User updated successfully!")
+        return redirect('admin_view_users')
+
+    return render(request, "adminapp/admin_edit_user.html", {"user": user})
+
+
+def admin_delete_user(request, user_id):
+    user = get_object_or_404(TblUser, id=user_id)
+    user.delete()
+    messages.success(request, "User deleted successfully!")
+    return redirect('admin_view_users')
