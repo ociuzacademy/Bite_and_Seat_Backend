@@ -1,18 +1,30 @@
 from rest_framework import serializers
 from .models import *
-# from django.contrib.auth.password_validation import validate_password
 
-class tbl_registerSerializer(serializers.ModelSerializer):
+
+# class tbl_registerSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = '__all__'
+
+#     def validate(self, data):
+#         if data.get('user_type') == 'student':
+#             if not data.get('batch_name') or not data.get('department'):
+#                 raise serializers.ValidationError("Students must have batch_id and department.")
+#         return data
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = '__all__'
-
-    def validate(self, data):
-        if data.get('user_type') == 'student':
-            if not data.get('batch_name') or not data.get('department'):
-                raise serializers.ValidationError("Students must have batch_id and department.")
-        return data
-    
+        model = TblUser
+        fields = [
+            'id',
+            'username',
+            'password',
+            'user_type',
+            'batch_name',
+            'department',
+            'profile_photo'
+        ]
+        
 from rest_framework import serializers
 from .models import Category
 
@@ -319,3 +331,90 @@ class FeedbackListSerializer(serializers.ModelSerializer):
             "comments",
             "items"
         ]
+
+class UsersSerializer(serializers.ModelSerializer):
+    profile_photo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TblUser
+        fields = [
+            'id',
+            'username',
+            'password',
+            'user_type',
+            'batch_name',
+            'department',
+            'profile_photo'
+        ]
+
+    def get_profile_photo(self, obj):
+        if obj.profile_photo:
+            return f"media/{obj.profile_photo.name}"   # <-- FIXED
+        return None
+    
+    
+class OrderItemsSerializer(serializers.ModelSerializer):
+    food_name = serializers.CharField(source='food_item.name')
+
+    class Meta:
+        model = OrderItem
+        fields = ['food_name', 'quantity', 'price', 'total_price']
+        
+        
+class SeatssSerializer(serializers.ModelSerializer):
+    seat_number = serializers.IntegerField(source="seat.seat_number")
+    seat_price = serializers.DecimalField(source="seat.seat_price", max_digits=6, decimal_places=2)
+    table_name = serializers.CharField(source="seat.table.table_name")
+
+    class Meta:
+        model = OrderSeat
+        fields = ['seat_number', 'seat_price', 'table_name']
+
+class UserOrderSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    items = OrderItemsSerializer(many=True)
+    seats = serializers.SerializerMethodField()
+    tables = serializers.SerializerMethodField()
+    time_slot = serializers.CharField(source="time_slot.__str__", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'user_id',
+            'booking_type',
+            'date',
+            'category',
+            'time_slot',
+            'number_of_persons',
+            'tables',
+            'seats',
+            'total_amount',
+            'payment_mode',
+            'items',
+            'created_at'
+        ]
+
+    def get_seats(self, obj):
+        seats = obj.order_seats.all()
+        return SeatssSerializer(seats, many=True).data
+
+    def get_tables(self, obj):
+        from userapp.models import Table
+        
+        raw_tables = obj.tables
+        table_ids = []
+
+        for t in raw_tables:  
+            if isinstance(t, int):
+                table_ids.append(t)
+
+            elif isinstance(t, str) and t.isdigit():
+                table_ids.append(int(t))
+
+            elif isinstance(t, dict) and "table_id" in t:
+                table_ids.append(int(t["table_id"]))
+
+        # queryset
+        tables = Table.objects.filter(id__in=table_ids)
+        return [t.table_name for t in tables]

@@ -127,12 +127,21 @@
           {% for order in orders %}
           <tr>
             <td><strong>#{{ order.id }}</strong></td>
-            <td>{{ order.user.username }}</td>
+            <td>
+    {% if order.user %}
+        {{ order.user.username }}
+    {% else %}
+        {{ order.outsider_name }} <span class="text-muted">(Outsider)</span>
+    {% endif %}
+</td>
+
             <td>
               {% if order.booking_type == 'TABLE_ONLY' %}
                 <span class="badge bg-info">Table Only</span>
               {% elif order.booking_type == 'PREBOOKED' %}
                 <span class="badge bg-success">Prebooked</span>
+              {% elif order.booking_type == 'ONSPOT' %}
+                <span class="badge bg-success">On Spot</span>
               {% else %}
                 <span class="badge bg-secondary">Unknown</span>
               {% endif %}

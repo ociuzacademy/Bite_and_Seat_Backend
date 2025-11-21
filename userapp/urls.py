@@ -51,7 +51,7 @@ urlpatterns = [
     path('swagger.yaml', schema_view.without_ui(cache_timeout=0), name='schema-yaml'),
 
     # Login API
-    path('register/', RegisterUserAPI.as_view(), name='    '),
+    # path('register/', RegisterUserAPI.as_view(), name='    '),
 
 
     path('login/', login_view, name='login'),
@@ -69,7 +69,7 @@ urlpatterns = [
     path('update-step2/<int:order_id>/', views.update_step2, name='update-step2'),
     path('update-step3/<int:order_id>/', views.update_step3, name='update-step3'),
     # path('finalize-order/<int:order_id>/', views.finalize_order, name='finalize-order'),
-    path('profile/<int:user_id>/', user_profile, name='user-profile'),
+    path('view_profile/',UserProfileView.as_view({'get':'list'}),name='view_profile'),
     # path('profile/', user_profile, name='profile'),
     path('report/create/', create_report, name='create-report'),
     path('make-payment/', make_payment, name='make_payment'),
@@ -77,5 +77,6 @@ urlpatterns = [
     path('all-tables-seats/', views.get_all_tables_and_seats, name='get_all_tables_and_seats'),
     path('feedback/create/', views.create_feedback, name='create_feedback'),
     path('feedback/<int:user_id>/', views.get_user_feedback, name='get_user_feedback'),
+    path('orders-list/', OrderListView.as_view(), name='orders-list'),
 
 ]

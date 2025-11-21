@@ -18,7 +18,7 @@ from adminapp.models import *
 #         return f"{self.username} ({self.user_type})"
 
 
-class User(models.Model):
+class TblUser(models.Model):
     USER_TYPES = [
         ('student', 'Student'),
         ('faculty', 'Faculty'),
@@ -36,14 +36,14 @@ class User(models.Model):
 
 
 class UserSelection(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     selected_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     selected_food = models.ForeignKey(TblMenuItem, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)  # added quantity
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.user_name} selected {self.selected_food.name} ({self.selected_category}) x{self.quantity}"
+        return f"{self.user.username} selected {self.selected_food.name} ({self.selected_category}) x{self.quantity}"
     
 
 from django.db import models
@@ -60,7 +60,7 @@ class Booking(models.Model):
         return f"Booking on {self.selected_date} for {self.timeslot}"
     
 class SeatBooking(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
     booking_time = models.DateTimeField(auto_now_add=True)
@@ -75,16 +75,22 @@ from decimal import Decimal
 
 from django.db import models
 from adminapp.models import TblMenuItem, Category
-from userapp.models import User, Table, Seat
+from userapp.models import TblUser, Table, Seat
 
 
 class Order(models.Model):
     BOOKING_TYPES = [
         ('TABLE_ONLY', 'Table Only'),
         ('PREBOOKED', 'Prebooked (Table + Food)'),
+        ('ONSPOT', 'On-the-Spot (Table + Food)'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Outsider fields (Admin booking)
+    outsider_name = models.CharField(max_length=100, null=True, blank=True)
+    outsider_phone = models.CharField(max_length=20, null=True, blank=True)
+    
     booking_type = models.CharField(max_length=20, choices=BOOKING_TYPES, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
@@ -123,9 +129,16 @@ class OrderSeat(models.Model):
         self.seat.is_occupied = True
         self.seat.save()
         super().save(*args, **kwargs)
+        table_id = self.seat.table.id
+        if table_id not in self.order.tables:
+            updated_tables = self.order.tables
+            updated_tables.append(table_id)
+            self.order.tables = updated_tables
+            self.order.save()
 
     def __str__(self):
         return f"{self.order} - {self.seat}"
+        
 
 
 class OrderItem(models.Model):
@@ -184,7 +197,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Report(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     category = models.CharField(max_length=50)      # String category
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -209,7 +222,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class TblReport(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     category = models.CharField(max_length=50)      # String category
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -235,7 +248,7 @@ from django.db import models
 from userapp.models import User  # your custom user model
 
 class UserReport(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     category = models.CharField(max_length=50)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -259,7 +272,7 @@ class UserReportImage(models.Model):
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from .models import User, Order  # adjust import as needed
+from .models import TblUser, Order  # adjust import as needed
 
 # class Feedback(models.Model):
 #     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -276,7 +289,7 @@ from .models import User, Order  # adjust import as needed
 
 
 class Feedback(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TblUser, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
 
     overall_rating = models.IntegerField(

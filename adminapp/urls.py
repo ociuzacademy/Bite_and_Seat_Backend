@@ -18,7 +18,7 @@ urlpatterns = [
    path('menu/delete/<int:item_id>/', views.delete_menu_item, name='delete_menu'),
    path('menu/edit/<int:item_id>/', views.edit_menu_item, name='edit_menu'),
    path('add-daily-menu/', views.add_daily_menu, name='add_daily_menu'),
-    path('daily-menu-list/', views.daily_menu_list, name='daily_menu_list'),
+   path('daily-menu-list/', views.daily_menu_list, name='daily_menu_list'),
    path('timeslots/', time_slot_list, name='time_slot_list'),
    path('timeslots/add/', add_time_slot, name='add_time_slot'),
    path('timeslots/edit/<int:slot_id>/', edit_time_slot, name='edit_time_slot'),
@@ -36,10 +36,6 @@ urlpatterns = [
    path('feedbacks/', views.admin_view_all_feedbacks, name='admin_view_all_feedbacks'),
    path('view_scanner_data/',views.view_scanner_data,name='view_scanner_data'),
    path('select-food/<int:order_id>/', views.admin_select_food, name='admin_select_food'),
-   
+   path('admin/outsider-booking/',views.admin_book_outsider, name='admin_book_outsider'),
+   path("aadd-user/", views.admin_add_user, name="admin_add_user"),
 ]
-
-
-
-
-

@@ -2,22 +2,54 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SeatBookingSerializer, tbl_registerSerializer
-from .models import User, UserReport, UserReportImage
-class RegisterUserAPI(APIView):
-    def post(self, request):
-        serializer = tbl_registerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "message": "User registered successfully!",
-                "data": serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from .serializers import SeatBookingSerializer, UserSerializer
+from .models import TblUser, UserReport, UserReportImage
+# class RegisterUserAPI(APIView):
+#     def post(self, request):
+#         serializer = UserSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({
+#                 "message": "User registered successfully!",
+#                 "data": serializer.data
+#             }, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 # from django.contrib.auth.hashers import check_password
+# @api_view(['POST'])
+# def login_view(request):
+#     username = request.data.get('username')
+#     password = request.data.get('password')
+
+#     if not username or not password:
+#         return Response({
+#             "message": "Username and password are required",
+#             "status": "failure"
+#         }, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         user = User.objects.get(username=username, password=password)
+
+#         # Store user ID in session (optional)
+#         request.session['user_id'] = user.id
+
+#         serializer = tbl_registerSerializer(user)
+#         return Response({
+#             "message": "User login successful",
+#             "status": "success",
+#             'user_id':user.id,
+#             "user": serializer.data
+#         }, status=status.HTTP_200_OK)
+
+#     except User.DoesNotExist:
+#         return Response({
+#             "message": "Invalid username or password",
+#             "status": "failure"
+#         }, status=status.HTTP_401_UNAUTHORIZED)
+    
+
 @api_view(['POST'])
 def login_view(request):
     username = request.data.get('username')
@@ -30,27 +62,24 @@ def login_view(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(username=username, password=password)
+        user = TblUser.objects.get(username=username, password=password)
 
-        # Store user ID in session (optional)
+        # Save user in session
         request.session['user_id'] = user.id
 
-        serializer = tbl_registerSerializer(user)
+        serializer = UserSerializer(user)
         return Response({
             "message": "User login successful",
             "status": "success",
-            'user_id':user.id,
+            "user_id": user.id,
             "user": serializer.data
         }, status=status.HTTP_200_OK)
 
-    except User.DoesNotExist:
+    except TblUser.DoesNotExist:
         return Response({
             "message": "Invalid username or password",
             "status": "failure"
         }, status=status.HTTP_401_UNAUTHORIZED)
-    
-
-
 
 from rest_framework import generics, permissions
 from django.shortcuts import render
@@ -117,7 +146,7 @@ class MenuItemViewSet(viewsets.ReadOnlyModelViewSet):
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import UserSelection, Category, MenuItem, User
+from .models import UserSelection, Category, MenuItem, TblUser
 from .serializers import UserSelectionSerializer, CreateUserSelectionSerializer
 
 @api_view(['POST'])
@@ -248,7 +277,7 @@ def available_seats(request, table_id):
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import User, Table, Seat, SeatBooking
+from .models import TblUser, Table, Seat, SeatBooking
 from .serializers import SeatBookingSerializer
 
 @api_view(['POST'])
@@ -260,8 +289,8 @@ def book_multiple_seats(request):
 
     # Validate user
     try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
+        user = TblUser.objects.get(id=user_id)
+    except TblUser.DoesNotExist:
         return Response({'error': 'Invalid user_id'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Validate table
@@ -506,40 +535,25 @@ def update_step3(request, order_id):
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import User
-from .serializers import tbl_registerSerializer
+from .models import TblUser
+from .serializers import UsersSerializer
 
-@api_view(['GET'])
-def user_profile(request, user_id=None):
-    """
-    Fetch user profile by user_id or session.
-    """
-    try:
-        # Option 1: Get user by provided ID
+class UserProfileView(viewsets.ReadOnlyModelViewSet):
+    queryset = TblUser.objects.all()
+    serializer_class=UsersSerializer
+    
+    def list(self, request, *args,**kwargs):
+        user_id= request.query_params.get('user_id')
+        
         if user_id:
-            user = User.objects.get(id=user_id)
-        # Option 2: Get user from session if available
-        elif 'user_id' in request.session:
-            user = User.objects.get(id=request.session['user_id'])
+            try:
+                user= self.queryset.get(id=user_id)
+                serializer = self.get_serializer(user)
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            except TblUser.DoesNotExist:
+                return Response({"detail":"User not found"},status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response({
-                "message": "User not found or not logged in",
-                "status": "failure"
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = tbl_registerSerializer(user)
-        return Response({
-            "message": "User profile fetched successfully",
-            "status": "success",
-            "user": serializer.data
-        }, status=status.HTTP_200_OK)
-
-    except User.DoesNotExist:
-        return Response({
-            "message": "User not found",
-            "status": "failure"
-        }, status=status.HTTP_404_NOT_FOUND)
-
+            return super().list(request,*args,**kwargs)
 
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -725,7 +739,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Feedback, Order
-from .serializers import FeedbackSerializer,FeedbackListSerializer
+from .serializers import FeedbackSerializer,FeedbackListSerializer,UserOrderSerializer
 @api_view(['POST'])
 def create_feedback(request):
     serializer = FeedbackSerializer(data=request.data)
@@ -760,3 +774,20 @@ def get_user_feedback(request, user_id):
         "total_feedbacks": feedbacks.count(),
         "data": serializer.data
     }, status=status.HTTP_200_OK)
+    
+    
+class OrderListView(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+
+        if not user_id:
+            return Response(
+                {"error": "User ID is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # FIX: use 'date' or 'created_at'
+        orders = Order.objects.filter(user_id=user_id).order_by('-created_at')
+
+        serializer = UserOrderSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

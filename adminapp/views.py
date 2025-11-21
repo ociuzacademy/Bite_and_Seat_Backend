@@ -3,9 +3,15 @@ from django.shortcuts import render
 # Create your views here.
 from django.shortcuts import render, redirect
 from .models import Tbl_Admin
+from userapp.models import *
 
 from django.shortcuts import render, redirect
 from .models import Tbl_Admin
+from datetime import time
+from django.utils.timezone import now
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
 
 def admin_login_view(request):
     entered_data = None  # To send data to template
@@ -421,9 +427,33 @@ def admin_all_orders(request):
 
 
 
+from django.shortcuts import render, get_object_or_404
+from userapp.models import Table
+
+from django.shortcuts import render, get_object_or_404
+from userapp.models import Order, Table
+
 def admin_order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    return render(request, 'adminapp/admin_order_detail.html', {'order': order})
+
+    mapped_tables = []
+    if isinstance(order.tables, list):
+        for t in order.tables:
+            try:
+                table_obj = Table.objects.get(id=t["table_id"])
+                mapped_tables.append({
+                    "table_name": table_obj.table_name,
+                    "seats": t["seat_ids"]
+                })
+            except:
+                pass
+
+    return render(request, "adminapp/admin_order_detail.html", {
+        "order": order,
+        "mapped_tables": mapped_tables
+    })
+
+
 
 from django.shortcuts import render, get_object_or_404, redirect
 from userapp.models import Order, OrderItem
@@ -521,3 +551,180 @@ def admin_view_all_feedbacks(request):
 
 def view_scanner_data(request):
     return render(request, 'scanner.html')
+
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from decimal import Decimal
+from .models import *
+from userapp.models import Table, Seat
+from adminapp.models import TblMenuItem, TblDailyMenu
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from decimal import Decimal
+from userapp.models import Table, Seat
+
+
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from decimal import Decimal
+
+from userapp.models import Table, Seat
+from adminapp.models import TblTimeSlot, TblDailyMenu, TblMenuItem
+# from .models import Order, OrderSeat, OrderItem
+
+
+def admin_book_outsider(request):
+    today = timezone.localdate()
+    now = timezone.localtime().time()
+
+    # GET ACTIVE TIMESLOT
+    selected_slot = TblTimeSlot.objects.filter(
+        start_time__lte=now,
+        end_time__gte=now
+    ).first()
+
+    selected_category = selected_slot.category if selected_slot else None
+
+    tables = Table.objects.all()
+    available_seat_ids = []
+    food_items = []
+
+    # FIND BOOKED SEATS (Don't use is_occupied)
+    if selected_slot:
+        booked_seat_ids = OrderSeat.objects.filter(
+            order__date=today,
+            order__time_slot=selected_slot
+        ).values_list("seat_id", flat=True)
+
+        available_seats = Seat.objects.exclude(id__in=booked_seat_ids)
+        available_seat_ids = list(available_seats.values_list("id", flat=True))
+
+    # LOAD TODAY'S FOOD ITEMS
+    if selected_category:
+        try:
+            today_menu = TblDailyMenu.objects.get(date=today)
+            food_items = today_menu.items.filter(category=selected_category)
+        except TblDailyMenu.DoesNotExist:
+            food_items = TblMenuItem.objects.filter(category=selected_category)
+
+    # HANDLE FORM SUBMISSION
+    if request.method == "POST" and request.POST.get("final_submit") == "1":
+
+        name = request.POST.get("name", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        persons = int(request.POST.get("number_of_persons", 0))
+        seat_ids = request.POST.getlist("seat_ids")
+
+        if not name or not phone:
+            messages.error(request, "Name and phone are required.")
+            return redirect("admin_book_outsider")
+
+        if persons <= 0:
+            messages.error(request, "Invalid number of persons.")
+            return redirect("admin_book_outsider")
+
+        if len(seat_ids) < persons:
+            messages.error(request, "Select enough seats.")
+            return redirect("admin_book_outsider")
+
+        if not selected_slot:
+            messages.error(request, "No active timeslot.")
+            return redirect("admin_book_outsider")
+
+        # CREATE ORDER
+        order = Order.objects.create(
+            outsider_name=name,
+            outsider_phone=phone,
+            booking_type="ONSPOT",
+            category=selected_category,
+            date=today,
+            time_slot=selected_slot,
+            number_of_persons=persons,
+            payment_mode="POS"
+        )
+
+        total_table_charge = Decimal("0.00")
+
+        # =============== SAVE TABLE + SEAT MAPPING ===============
+        table_map = {}  # {table_id: [seat_ids]}
+
+        for seat_id in seat_ids:
+            seat = Seat.objects.get(id=seat_id)
+            table_id = seat.table.id
+
+            # Add seat under correct table
+            if table_id not in table_map:
+                table_map[table_id] = []
+            table_map[table_id].append(seat.id)
+
+            # Save seat assignment
+            OrderSeat.objects.create(order=order, seat=seat)
+            total_table_charge += seat.seat_price
+
+        # Store clean table list JSON
+        order.tables = [
+            {"table_id": tid, "seat_ids": sids}
+            for tid, sids in table_map.items()
+        ]
+
+        order.table_charge = total_table_charge
+        order.save()
+
+        # ADD FOOD ITEMS
+        for item in food_items:
+            qty = int(request.POST.get(f"food_{item.id}", 0))
+            if qty > 0:
+                OrderItem.objects.create(
+                    order=order,
+                    food_item=item,
+                    quantity=qty,
+                    price=item.rate,
+                    total_price=item.rate * qty
+                )
+
+        order.update_total()
+
+        messages.success(request, f"Booking successful! Order #{order.id}")
+        return redirect("admin_all_orders")
+
+    context = {
+        "selected_slot": selected_slot,
+        "selected_category": selected_category,
+        "tables": tables,
+        "available_seat_ids": available_seat_ids,
+        "food_items": food_items,
+    }
+
+    return render(request, "adminapp/admin_outsider_booking.html", context)
+
+
+def admin_add_user(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user_type = request.POST.get("user_type")
+        batch_name = request.POST.get("batch_name")
+        department = request.POST.get("department")
+        profile_photo = request.FILES.get("profile_photo")
+
+        if user_type == "student":
+            if not batch_name or not department:
+                messages.error(request, "Students must have batch name and department.")
+                return redirect("admin_add_user")
+
+        TblUser.objects.create(
+            username=username,
+            password=password,
+            user_type=user_type,
+            batch_name=batch_name if user_type == "student" else None,
+            department=department,
+            profile_photo=profile_photo
+        )
+
+        messages.success(request, "User added successfully!")
+        return redirect("admin_add_user")
+
+    return render(request, "adminapp/admin_add_user.html")
