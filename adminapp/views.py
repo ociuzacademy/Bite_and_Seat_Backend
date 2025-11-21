@@ -551,7 +551,7 @@ def admin_view_all_feedbacks(request):
 
 
 def view_scanner_data(request):
-    return render(request, 'scanner.html')
+    return render(request, 'adminapp/scanner.html')
 
 from django.utils import timezone
 from django.shortcuts import render, redirect

@@ -391,6 +391,18 @@
                     <a href="{% url 'admin_dashboard' %}"><i class="fas fa-home"></i> Home</a>
                 </li>
                 <li>
+                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-cogs"></i> User
+                    </a>
+                    <ul class="collapse list-unstyled" id="userSubmenu">
+                        <!-- <li><a href=""><i class="fas fa-plus-circle"></i> Add Service</a></li> -->
+                        <li><a href="{% url 'admin_add_user' %}"><i class="fas fa-plus-circle"></i>Add User</a></li>
+                        <li><a href="{% url 'admin_view_users' %}"><i class="fas fa-plus-circle"></i>List User</a></li>
+                        <!-- <li><a href=""><i class="fas fa-list"></i>List Categories</a></li> -->
+                        
+                    </ul>
+                </li>
+                <li>
                     <a href="#categorySubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="fas fa-cogs"></i> Category
                     </a>
