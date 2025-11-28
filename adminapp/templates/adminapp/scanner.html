@@ -51,69 +51,70 @@
       padding: 10px;
       border-radius: 8px;
     }
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-    }
-    a {
-      color: #00796b;
-      text-decoration: none;
-      font-weight: 600;
-    }
   </style>
 </head>
 <body>
+
   <h2>📷 QR Code Scanner</h2>
   <div id="reader"></div>
 
   <div id="result-container">
     <h3>✅ Scan Result:</h3>
-    <div id="result-text">Scan a QR code to see the details...</div>
+    <div id="result-text">Waiting for QR scan...</div>
   </div>
 
   <script>
     const html5QrCode = new Html5Qrcode("reader");
 
-    function showResult(decodedText) {
-      const container = document.getElementById("result-container");
-      const resultText = document.getElementById("result-text");
-      container.style.display = "block";
+    // Extract order_id even if format is not valid JSON
+    function extractOrderId(text) {
 
-      // Detect if it's a URL
-      if (/^https?:\/\//.test(decodedText)) {
-        resultText.innerHTML = `🔗 URL detected:<br><a href="${decodedText}" target="_blank">${decodedText}</a>`;
+      // Try JSON first
+      try {
+        const json = JSON.parse(text);
+        if (json.order_id) return json.order_id;
+      } catch (e) {
+        // Ignore JSON errors
       }
-      // Detect if it's JSON
-      else if (decodedText.trim().startsWith("{") || decodedText.trim().startsWith("[")) {
-        try {
-          const jsonData = JSON.parse(decodedText);
-          resultText.innerHTML = `<b>🧩 JSON Data:</b><pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
-        } catch (e) {
-          resultText.innerText = `📄 Text: ${decodedText}`;
-        }
-      }
-      // Otherwise treat as plain text
-      else {
-        resultText.innerText = `📄 Text: ${decodedText}`;
-      }
+
+      // Fallback for non-JSON formats: {order_id: 19}, order_id=19, etc.
+      const match = text.match(/order[_\s]*id\s*[:=]\s*(\d+)/i);
+      if (match) return match[1];
+
+      return null; // order_id not found
     }
 
     function onScanSuccess(decodedText) {
-      showResult(decodedText);
+      const resultContainer = document.getElementById("result-container");
+      const resultText = document.getElementById("result-text");
 
-      // Stop scanning automatically
-      html5QrCode.stop().then(() => {
-        console.log("QR Code scanning stopped.");
-      }).catch(err => console.error("Failed to stop scanning:", err));
+      resultContainer.style.display = "block";
+      resultText.innerText = `📄 Text: ${decodedText}`;
+
+      // Extract order ID
+      const orderId = extractOrderId(decodedText);
+
+      if (orderId) {
+        console.log("Order ID:", orderId);
+
+        // Stop scanner
+        html5QrCode.stop();
+
+        // Redirect to order details page
+        setTimeout(() => {
+          window.location.href = `/adminapp/orders/${orderId}/`;
+        }, 1000);
+
+      } else {
+        console.warn("❌ order_id not found in scanned data");
+      }
     }
 
     function onScanError(errorMessage) {
-      // Ignore scan errors — they happen frequently
+      // Ignore repetitive scan errors
     }
 
-    // Start scanning
+    // Start scanner
     html5QrCode.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
@@ -125,5 +126,6 @@
       resultText.innerText = `❌ Camera start failed: ${err}`;
     });
   </script>
+
 </body>
 </html>
