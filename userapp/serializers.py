@@ -260,13 +260,28 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
 
+    slot_start_time = serializers.SerializerMethodField()
+    slot_end_time = serializers.SerializerMethodField()
+
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'booking_type', 'category', 'date', 'time_slot',
+            'slot_start_time', 'slot_end_time',
             'number_of_persons', 'tables', 'table_charge', 'total_amount',
             'payment_mode', 'items', 'payments', 'created_at'
         ]
+
+    def get_slot_start_time(self, obj):
+        if obj.time_slot:
+            return obj.time_slot.start_time.strftime("%H:%M")
+        return None
+
+    def get_slot_end_time(self, obj):
+        if obj.time_slot:
+            return obj.time_slot.end_time.strftime("%H:%M")
+        return None
+
 
 
 class SeatsSerializer(serializers.ModelSerializer):
