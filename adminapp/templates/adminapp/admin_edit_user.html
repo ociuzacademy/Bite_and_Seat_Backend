@@ -1,0 +1,132 @@
+{% extends "adminapp/dashboard.html" %}
+
+{% block content %}
+
+<style>
+    :root {
+        --primary: #088080;
+        --primary-light: #e8f7f6;
+        --primary-dark: #066666;
+    }
+
+    .page-wrapper {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .edit-card {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .profile-preview {
+        width: 90px;
+        height: 90px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 2px solid var(--primary-light);
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="page-wrapper">
+
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" id="fadeMessage">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+
+    <div class="edit-card mt-4">
+
+        <h3 class="text-center fw-bold" style="color:var(--primary)"> Edit User</h3>
+        <hr>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- USERNAME -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Username</label>
+                <input type="text" name="username" value="{{ user.username }}" class="form-control" required>
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Password</label>
+                <input type="text" name="password" value="{{ user.password }}" class="form-control" required>
+            </div>
+
+            <!-- USER TYPE -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">User Type</label>
+                <select name="user_type" id="userType" class="form-select" required>
+                    <option value="">-- Select --</option>
+                    <option value="student" {% if user.user_type == 'student' %}selected{% endif %}>Student</option>
+                    <option value="faculty" {% if user.user_type == 'faculty' %}selected{% endif %}>Faculty</option>
+                </select>
+            </div>
+
+            <!-- DEPARTMENT (Common) -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Department</label>
+                <input type="text" name="department" value="{{ user.department }}" class="form-control" required>
+            </div>
+
+            <!-- BATCH (Only Student) -->
+            <div id="batchField" class="mb-3"
+                 {% if user.user_type != 'student' %}style="display:none;"{% endif %}>
+                <label class="form-label fw-semibold">Batch Name</label>
+                <input type="text" name="batch_name" value="{{ user.batch_name }}" class="form-control">
+            </div>
+
+            <!-- PROFILE PHOTO -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Profile Photo</label><br>
+
+                {% if user.profile_photo %}
+                    <img src="/media/{{ user.profile_photo }}" class="profile-preview">
+                {% else %}
+                    <img src="https://via.placeholder.com/90" class="profile-preview">
+                {% endif %}
+
+                <input type="file" name="profile_photo" class="form-control mt-2">
+            </div>
+
+            <button class="btn w-100 py-2 text-white" style="background:var(--primary);">Update User</button>
+        </form>
+
+    </div>
+</div>
+
+
+<script>
+    // Auto-hide messages
+    setTimeout(() => {
+        const msg = document.getElementById("fadeMessage");
+        if (msg) {
+            msg.style.transition = "0.6s";
+            msg.style.opacity = "0";
+        }
+    }, 3000);
+
+    // Show/Hide batch field
+    document.addEventListener("DOMContentLoaded", () => {
+        const userType = document.getElementById("userType");
+        const batchField = document.getElementById("batchField");
+
+        userType.addEventListener("change", () => {
+            if (userType.value === "student") {
+                batchField.style.display = "block";
+            } else {
+                batchField.style.display = "none";
+            }
+        });
+    });
+</script>
+
+{% endblock %}

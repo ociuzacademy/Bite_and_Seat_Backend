@@ -1,0 +1,296 @@
+{% extends "adminapp/dashboard.html" %}
+
+{% block content %}
+
+<style>
+/* ---- GLOBAL STYLE ---- */
+:root {
+    --primary: #088080;
+    --primary-light: #e8f7f6;
+    --primary-dark: #066666;
+}
+
+.page-wrapper {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* ---- CARD CONTAINERS ---- */
+.main-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+}
+
+/* ---- FORM INPUTS ---- */
+.form-control {
+    border-radius: 10px;
+}
+
+/* ---- SEATS ---- */
+.seat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.seat-container {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    text-align: center;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.seat-container.disabled {
+    background: #f2f2f2;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.seat-container.selected {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 16px rgba(8,128,128,0.3);
+}
+
+.seat-checkbox {
+    display: none;
+}
+
+/* ---- FOOD CARD ---- */
+.food-card {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    height: 100%;
+}
+
+/* ---- BUTTON ---- */
+.btn-confirm {
+    background: white;
+    color: #088080;
+    border: 2px solid #088080;
+    padding: 14px;
+    width: 100%;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.btn-confirm:hover {
+    background: #088080 !important;
+    color: white !important;
+    border-color: #088080 !important;
+}
+</style>
+
+<div class="page-wrapper">
+
+    <!-- HEADER CARD -->
+    <div class="main-card">
+        <h2 class="fw-bold" style="color:var(--primary);">Outsider On-the-Spot Booking</h2>
+
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mt-2">{{ message }}</div>
+        {% endfor %}
+
+        {% if selected_slot %}
+        <div class="alert alert-info shadow-sm mt-3">
+            <strong>Current Slot:</strong> {{ selected_slot.start_time }} - {{ selected_slot.end_time }} <br>
+            <strong>Category:</strong> {{ selected_category.name }} <br>
+            <strong>Today's Special Available:</strong> {{ todays_specials.count }} item(s)
+        </div>
+        {% else %}
+        <div class="alert alert-warning shadow-sm mt-3">
+            <strong>Outsider (Walk-in) Booking</strong><br>
+            <strong>Current Time:</strong> {{ now|time:"H:i" }} <br>
+            <strong>Category:</strong> {{ selected_category.name }} (based on time)<br>
+            <strong>Available Seats:</strong> {{ available_seat_ids|length }} seat(s) <br>
+            <strong>Today's Special Available:</strong> {{ todays_specials.count }} item(s)
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="main-card">
+
+        <form method="POST" id="bookingForm">
+            {% csrf_token %}
+            <input type="hidden" name="final_submit" id="finalSubmit" value="0">
+
+            <!-- DETAILS -->
+            <h4 class="section-title">Outsider Details</h4>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Name *</label>
+                    <input type="text" class="form-control" name="name" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label>Phone *</label>
+                    <input type="text" class="form-control" name="phone" required>
+                </div>
+            </div>
+
+            <label>Number of Persons *</label>
+            <input type="number" class="form-control w-25" id="personsInput" name="number_of_persons" min="1" required>
+
+            <hr>
+
+            <!-- SEAT SECTION -->
+            <h4 class="section-title">Select Seats  
+                <small class="text-muted">(<span id="selectedCount">0</span> Selected)</small>
+            </h4>
+
+            {% if available_seat_ids %}
+                {% for table in tables %}
+                    <div class="mb-3 p-3" style="background:#fafafa;border-radius:12px;">
+                        <h5 class="mb-2">{{ table.table_name }} ({{ table.number_of_seats }} seats)</h5>
+
+                        <div class="seat-grid">
+                        {% for seat in table.seats.all %}
+                            <label class="seat-container 
+                                {% if seat.id not in available_seat_ids %}disabled{% endif %}"
+                                id="label_{{ seat.id }}" 
+                                for="seat_{{ seat.id }}">
+
+                                Seat {{ seat.seat_number }} <br>
+                                <small>₹{{ seat.seat_price }}</small>
+                            </label>
+
+                            <input type="checkbox" 
+                                class="seat-checkbox" 
+                                value="{{ seat.id }}" 
+                                id="seat_{{ seat.id }}" 
+                                name="seat_ids"
+                                {% if seat.id not in available_seat_ids %}disabled{% endif %}>
+                        {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i> 
+
+                    {% if selected_category %}
+                        No seats available for {{ selected_category.name }}.
+                    {% else %}
+                        No seats available for current time.
+                    {% endif %}
+                    
+                    {% if todays_specials.exists %}
+                    <br><small>
+                        {% if available_seat_ids %}
+                            Today's special items require seat selection.
+                        {% else %}
+                            Today's special items require available seats.
+                        {% endif %}
+                    </small>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <hr>
+
+            <!-- FOOD SECTION -->
+            <h4 class="section-title">Today's Food Items</h4>
+
+            <div class="row">
+                {% for item in food_items %}
+                <div class="col-md-6 mb-3">
+                    <div class="food-card">
+                        <h6 class="fw-bold">{{ item.name }}</h6>
+                        <p>₹{{ item.rate }}</p>
+                        <input type="number" min="0" max="10" class="form-control" 
+                               name="food_{{ item.id }}" style="width:100px;">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr>
+
+            <!-- TODAY'S SPECIAL SECTION -->
+            <h4 class="section-title">Today's Special Items 
+                <span class="badge bg-warning text-dark ms-2">Counter Booking Only</span>
+            </h4>
+
+            <div class="row">
+                {% for special in todays_specials %}
+                <div class="col-md-6 mb-3">
+                    <div class="food-card" style="border-left: 4px solid #ffc107;">
+                        <h6 class="fw-bold">{{ special.name }}</h6>
+                        <p>₹{{ special.rate }}</p>
+                        <input type="number" min="0" max="10" class="form-control" 
+                               name="special_{{ special.id }}" style="width:100px;" 
+                               placeholder="Qty">
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No today's special items available for {{ today|date:"F d, Y" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button class="btn btn-light btn-confirm border">
+                <i class="fas fa-check-circle"></i> Confirm Booking
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll(".seat-checkbox");
+    const selectedCount = document.getElementById("selectedCount");
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener("change", () => {
+            let label = document.getElementById("label_" + cb.value);
+            if (cb.checked) label.classList.add("selected");
+            else label.classList.remove("selected");
+
+            selectedCount.innerText = 
+                document.querySelectorAll(".seat-checkbox:checked").length;
+        });
+    });
+
+    document.querySelector(".btn-confirm").addEventListener("click", function(e){
+        e.preventDefault();
+
+        const persons = parseInt(document.getElementById("personsInput").value) || 0;
+        const selectedSeats = document.querySelectorAll(".seat-checkbox:checked").length;
+
+        if (selectedSeats < persons) {
+            alert("Please select " + persons + " seats.");
+            return;
+        }
+
+        document.getElementById("finalSubmit").value = "1";
+        document.getElementById("bookingForm").submit();
+    });
+});
+</script>
+
+{% endblock %}

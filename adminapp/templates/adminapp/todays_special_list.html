@@ -1,0 +1,236 @@
+{% extends 'adminapp/dashboard.html' %}
+{% load static %}
+{% block content %}
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #088080;
+            color: white;
+        }
+
+        td img {
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            text-decoration: none;
+            color: #088080;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .add-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #088080;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background-color: #218838;
+        }
+
+        .delete-btn {
+            color: red;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #888;
+        }
+        
+        .date-filter {
+            background: #e8f7f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .info-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+
+<div class="container">
+    <h2 class="mb-4 fw-bold" style="color: #088080;">Today's Special Items</h2>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Date Filter -->
+    <div class="date-filter">
+        <form method="GET" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label class="form-label"><strong>Filter by Date:</strong></label>
+            </div>
+            <div class="col-auto">
+                <input type="date" name="date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+            <div class="col-auto">
+                <a href="/adminapp/todays-special-page/" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+            <div class="col-auto ms-auto">
+                <span><strong>Showing:</strong> {{ today|date:"d M Y" }}</span>
+            </div>
+        </form>
+    </div>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Rate</th>
+            <th>Item/Plate</th>
+            <th>Date</th>
+            <th>Booking</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for special in specials %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+                {% if special.image %}
+                    <img src="{{ special.image.url }}" width="80" height="80" alt="{{ special.name }}">
+                {% else %}
+                    <img src="{% static 'images/default-food.jpg' %}" width="80" height="80" alt="No Image">
+                {% endif %}
+            </td>
+            <td><strong>{{ special.name }}</strong></td>
+            <td>{{ special.category.name }}</td>
+            <td>₹{{ special.rate }}</td>
+            <td>{{ special.item_per_plate }}</td>
+            <td>{{ special.date|date:"d M Y" }}</td>
+            <td>
+                <span class="info-badge">Counter Only</span>
+            </td>
+            <td>
+                <!-- Edit button -->
+                <a href="{% url 'edit_todays_special' special.id %}" class="btn btn-sm btn-warning" style="padding: 5px 10px;">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <!-- Delete form -->
+                <form method="POST" style="display:inline;" 
+                      onsubmit="return confirm('Delete {{ special.name }}?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_id" value="{{ special.id }}">
+                    <button type="submit" class="btn btn-sm btn-danger" style="padding: 5px 10px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="no-data">No Today's Special items found for {{ today|date:"d M Y" }}</td></tr>
+        {% endfor %}
+    </table>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <a href="{% url 'add_todays_special_page' %}" class="add-btn">
+            <i class="fas fa-plus-circle"></i> Add Today's Special
+        </a>
+        <a href="/adminapp/admin_dashboard/" class="btn btn-outline-primary ms-2">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight today's date items
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Find all date cells
+    const dateCells = document.querySelectorAll('td:nth-child(7)'); // Date column (7th td)
+    
+    dateCells.forEach(cell => {
+        const cellText = cell.textContent.trim();
+        const dateParts = cellText.split(' ');
+        if (dateParts.length === 3) {
+            const day = dateParts[0];
+            const month = dateParts[1];
+            const year = dateParts[2];
+            
+            const monthMap = {
+                'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+            };
+            
+            if (monthMap[month]) {
+                const cellDate = `${year}-${monthMap[month]}-${day.padStart(2, '0')}`;
+                
+                if (cellDate === todayFormatted) {
+                    cell.style.backgroundColor = '#e8f7f6';
+                    cell.style.fontWeight = 'bold';
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

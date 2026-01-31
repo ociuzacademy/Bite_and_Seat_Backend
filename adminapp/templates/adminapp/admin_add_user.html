@@ -1,0 +1,114 @@
+{% extends "adminapp/dashboard.html" %}
+
+{% block content %}
+
+<style>
+    .page-wrapper {
+        padding: 30px 0;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 35px;
+        box-shadow: 0px 8px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-card h3 {
+        color: #087272;
+        font-weight: 700;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #055c5c;
+    }
+
+    .btn-submit {
+        background: #087272;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+
+    .btn-submit:hover {
+        background: #065d5d;
+    }
+</style>
+
+<div class="container page-wrapper">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+            <div class="form-card">
+                <h3 class="text-center mb-4"> Add New User</h3>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <!-- User Type -->
+                    <div class="mb-3">
+                        <label class="form-label">User Type</label>
+                        <select name="user_type" id="userType" class="form-select" required>
+                            <option value="">-- Select --</option>
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+
+                    <!-- Department (common) -->
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" name="department" class="form-control" required>
+                    </div>
+
+                    <!-- Student-only batch name -->
+                    <div id="batchField" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">Batch Name</label>
+                            <input type="text" name="batch_name" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Profile photo -->
+                    <div class="mb-3">
+                        <label class="form-label">Profile Photo</label>
+                        <input type="file" name="profile_photo" class="form-control">
+                    </div>
+
+                    <button class="btn btn-submit w-100 py-2 text-white" type="submit">
+                        Add User
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/Hide batch field based on user type
+    document.addEventListener("DOMContentLoaded", () => {
+        const userType = document.getElementById("userType");
+        const batchField = document.getElementById("batchField");
+
+        userType.addEventListener("change", function () {
+            batchField.style.display = this.value === "student" ? "block" : "none";
+        });
+    });
+</script>
+
+{% endblock %}

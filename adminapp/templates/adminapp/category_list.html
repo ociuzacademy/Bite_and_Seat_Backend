@@ -1,0 +1,112 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+<style>
+    
+
+    .category-card {
+        max-width: 750px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        margin: 50px auto;
+        padding: 40px 50px;
+        text-align: center;
+    }
+
+    .category-card h2 {
+        font-weight: 700;
+        color: #1e3a8a;
+        margin-bottom: 25px;
+    }
+
+    ul.category-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    ul.category-list li {
+        background-color: #f9fafc;
+        border: 1px solid #e3e6ed;
+        border-radius: 10px;
+        padding: 14px 20px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    ul.category-list li:hover {
+        background-color: #eef5ff;
+        border-color: #d0e1ff;
+        transform: translateY(-2px);
+    }
+
+    .category-name {
+        font-weight: 600;
+        color: #333;
+        text-align: left;
+    }
+
+    .actions a {
+        text-decoration: none;
+        margin-left: 12px;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .actions a.edit {
+        color: #22c55e;
+    }
+
+    .actions a.edit:hover {
+        color: #15803d;
+    }
+
+    .actions a.delete {
+        color: #ef4444;
+    }
+
+    .actions a.delete:hover {
+        color: #b91c1c;
+    }
+
+    .add-btn {
+        background-color: #088080;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 25px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .add-btn:hover {
+        background-color: #088080;
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="category-card">
+    <h2 class="mb-4 fw-bold" style="color: #088080;">Category List</h2>
+
+    <ul class="category-list">
+        {% for category in categories %}
+            <li>
+                <span class="category-name">{{ category.name }}</span>
+                <span class="actions">
+                    <a href="{% url 'edit_category' category.id %}" class="edit">Edit</a>
+                    <a href="{% url 'delete_category' category.id %}" class="delete">Delete</a>
+                </span>
+            </li>
+        {% empty %}
+            <li class="text-muted text-center py-3">No categories available.</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'add_category' %}" class="add-btn">+ Add New Category</a>
+</div>
+{% endblock %}

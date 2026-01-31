@@ -1,0 +1,51 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<div class="container mt-5 p-4 rounded shadow-sm bg-light">
+  <h2 class="mb-4 fw-bold" style="color: #088080;">All User Feedbacks</h2>
+
+  {% if feedbacks %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle shadow-sm rounded">
+      <thead style="background-color: #088080; color: white;">
+        <tr>
+          <th>User</th>
+          <th>Order ID</th>
+          <th>Overall Rating</th>
+          <th>Comments</th>
+          <th>Food Item Ratings</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedbacks %}
+        <tr>
+          <td class="fw-semibold">{{ fb.user.username }}</td>
+          <td>#{{ fb.order.id }}</td>
+          <td>
+            <span class="badge bg-success">{{ fb.overall_rating }}/5 ⭐</span>
+          </td>
+          <td style="max-width: 350px;">{{ fb.comments }}</td>
+          <td>
+            {% if fb.items.all %}
+              <ul class="mb-0">
+                {% for item in fb.items.all %}
+                  <li>{{ item.food_item.name }}: {{ item.rating }}/5 ⭐</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <span class="text-muted">No item ratings</span>
+            {% endif %}
+          </td>
+          <td>{{ fb.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info mt-3">No feedbacks found.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

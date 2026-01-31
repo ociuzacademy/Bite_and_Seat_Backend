@@ -1,0 +1,179 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<style>
+  /* Container */
+  .menu-container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  /* Messages */
+  .message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    color: #fff;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  }
+
+  .message.error { background-color: #e74c3c; }
+  .message.success { background-color: #27ae60; }
+
+  /* Date input */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .form-group input[type="date"] {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 250px;
+    font-size: 16px;
+  }
+
+  /* Menu items grid */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .menu-item:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-color: #aaa;
+  }
+
+  .menu-item input[type="checkbox"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+  }
+
+  .menu-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-right: 12px;
+    border: 1px solid #ccc;
+  }
+
+  .menu-item-details {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-item-details .name {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .menu-item-details .price {
+    color: #666;
+    margin-top: 4px;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    background-color: #088080;
+    color: #fff;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .submit-btn:hover {
+    background-color: #088080;
+  }
+</style>
+
+<div class="menu-container">
+  <h2 class="mb-4 fw-bold" style="color: #088080;">Add Daily Menu</h2>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <!-- Date Selection -->
+    <div class="form-group">
+      <label for="date">Select Date:</label>
+      <input type="date" name="date" required min="{{ today|date:'Y-m-d' }}">
+    </div>
+
+    <!-- Menu Items Selection -->
+    <div class="form-group">
+      <h3>Select Menu Items:</h3>
+      <div class="menu-grid">
+        {% for item in items %}
+          <label class="menu-item">
+            <input type="checkbox" name="items" value="{{ item.id }}">
+            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+            <div class="menu-item-details">
+              <div class="name">{{ item.name }}</div>
+              <div class="price">₹{{ item.rate }}</div>
+            </div>
+          </label>
+        {% empty %}
+          <p>No menu items available.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="form-group">
+      <button type="submit" class="submit-btn">Save Daily Menu</button>
+    </div>
+  </form>
+</div>
+
+<!-- Auto-hide messages after 5 seconds -->
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('.message').forEach(msg => {
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 500); // remove after fade
+    });
+  }, 5000);
+</script>
+
+{% endblock %}

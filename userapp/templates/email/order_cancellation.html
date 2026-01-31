@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .order-details {
+            background: white;
+            padding: 15px;
+            border-left: 4px solid #ff6b6b;
+            margin: 15px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .refund-info {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1> Order Cancelled</h1>
+        <p>Your booking has been cancelled successfully</p>
+    </div>
+    
+    <div class="content">
+        <h2>Cancellation Details</h2>
+        
+        <div class="order-details">
+            <p><strong>Order Number:</strong> #{{ order.id }}</p>
+            <p><strong>Booking Date:</strong> {{ order.date }}</p>
+            <p><strong>Time Slot:</strong> {{ order.time_slot }}</p>
+            <p><strong>Cancellation Status:</strong> <span class="status">Cancelled</span></p>
+            <p><strong>Seats Freed:</strong> {{ seats_freed }} seat(s)</p>
+        </div>
+        
+        <div class="refund-info">
+            <h3>💸 Refund Information</h3>
+            <p><strong>Table Charges:</strong> ₹{{ order.table_charge }} refunded (if paid)</p>
+            <p><strong>Food Charges:</strong> Contact restaurant for food payment refund</p>
+            <p><em>Refunds will be processed within 3-5 business days to your original payment method.</em></p>
+        </div>
+        
+        <h3>Original Order Summary</h3>
+        <p><strong>Original Total:</strong> ₹{{ order.total_amount }}</p>
+        
+        {% if order.items.all %}
+        <p><strong>Food Items:</strong></p>
+        <ul>
+            {% for item in order.items.all %}
+            <li>{{ item.food_item.name }} x {{ item.quantity }} = ₹{{ item.total_price }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        <p>If you have any questions about your cancellation or refund, please contact our support team.</p>
+        
+        <div class="footer">
+            <p>Bite & Seat Restaurant</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

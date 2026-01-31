@@ -1,0 +1,182 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #087272;
+    --primary-light: #e0f4f3;
+    --primary-dark: #065c5c;
+  }
+
+  body {
+    background: var(--primary-light);
+  }
+
+  .page-container {
+    background: var(--primary-light);
+    min-height: 100vh;
+    padding: 50px 0;
+  }
+
+  .orders-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    transition: 0.3s ease;
+  }
+
+  .orders-card:hover {
+    transform: scale(1.01);
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .page-header h3 {
+    color: var(--primary-color);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-count {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-color);
+    font-weight: 600;
+  }
+
+  table thead {
+    background-color: var(--primary-color);
+    color: #fff;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+
+  table tbody tr:hover {
+    background-color: rgba(8, 114, 114, 0.05);
+  }
+
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transition: all 0.3s ease;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(8, 114, 114, 0.3);
+  }
+
+  .btn-success {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transition: 0.3s ease;
+  }
+
+  .btn-success:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+
+  th, td {
+    vertical-align: middle !important;
+  }
+
+  .table thead th {
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .table td strong {
+    color: var(--primary-dark);
+  }
+</style>
+
+<div class="page-container d-flex justify-content-center">
+  <div class="orders-card w-100" style="max-width: 1000px;">
+
+    <!-- Header -->
+    <div class="page-header mb-4">
+      <h3>All Orders</h3>
+      <span class="badge badge-count px-3 py-2 fs-6">
+        Total Orders: {{ orders|length }}
+      </span>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-responsive">
+      <table class="table align-middle text-center shadow-sm">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Booking Type</th>
+            <th>Date</th>
+            <th>Time Slot</th>
+            <th>Total (₹)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td><strong>#{{ order.id }}</strong></td>
+            <td>
+    {% if order.user %}
+        {{ order.user.username }}
+    {% else %}
+        {{ order.outsider_name }} <span class="text-muted">(Outsider)</span>
+    {% endif %}
+</td>
+
+            <td>
+              {% if order.booking_type == 'TABLE_ONLY' %}
+                <span class="badge bg-info">Table Only</span>
+              {% elif order.booking_type == 'PREBOOKED' %}
+                <span class="badge bg-success">Prebooked</span>
+              {% elif order.booking_type == 'ONSPOT' %}
+                <span class="badge bg-success">On Spot</span>
+              {% else %}
+                <span class="badge bg-secondary">Unknown</span>
+              {% endif %}
+            </td>
+            <td>{{ order.date }}</td>
+            <td>{{ order.time_slot|default:"None" }}</td>
+            <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
+            <td>
+              <div class="btn-group">
+                <a href="{% url 'admin_order_detail' order.id %}" 
+                   class="btn btn-sm btn-outline-primary fw-semibold">
+                   🔍 View
+                </a>
+                
+                {% if order.booking_type == 'TABLE_ONLY' and order.items.all|length == 0 %}
+                  <a href="{% url 'admin_select_food' order.id %}" 
+                     class="btn btn-sm btn-success fw-semibold"
+                     title="Add food items to this table booking">
+                     🍽️ Select Food
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-muted py-4">
+              No orders found at the moment.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test QR Scanner</title>
+</head>
+<body>
+    <h1>Test QR Scanning for Order #15</h1>
+    
+    <form method="POST" action="/adminapp/scan-qr/">
+        {% csrf_token %}
+        <input type="hidden" name="order_id" value="15">
+        <button type="submit">Simulate QR Scan for Order #15</button>
+    </form>
+    
+    <p>Expected: is_completed false→true, payment_status pending→paid</p>
+</body>
+</html>

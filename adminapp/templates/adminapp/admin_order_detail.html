@@ -1,0 +1,118 @@
+{% extends 'adminapp/dashboard.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #087272;
+    --primary-light: #e0f4f3;
+    --primary-hover: #065d5d;
+  }
+  .order-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 2.5rem;
+  }
+  .text-primary { color: var(--primary-color) !important; }
+  .btn-outline-secondary {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+  .btn-outline-secondary:hover {
+    background: var(--primary-color);
+    color:white;
+  }
+  .table thead {
+    background: var(--primary-light);
+    color: var(--primary-color);
+  }
+</style>
+
+<div class="container py-5 d-flex justify-content-center">
+  <div class="order-card w-100" style="max-width:1000px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="text-primary fw-bold mb-0">
+        Order #{{ order.id }} Details
+      </h2>
+      <a href="{% url 'admin_all_orders' %}" class="btn btn-outline-secondary fw-semibold px-3">
+        ← Back to Orders
+      </a>
+    </div>
+
+    <!-- ORDER INFORMATION -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <p><strong class="text-primary">User:</strong>
+          {% if order.user %}
+            {{ order.user.username }}
+          {% else %}
+            {{ order.outsider_name }} (Outsider)
+          {% endif %}
+        </p>
+
+        <p><strong class="text-primary">Booking Type:</strong> {{ order.get_booking_type_display }}</p>
+        <p><strong class="text-primary">Date:</strong> {{ order.date }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <p><strong class="text-primary">Time Slot:</strong> {{ order.time_slot }}</p>
+
+        <p><strong class="text-primary">Tables:</strong>
+{% if mapped_tables %}
+    {% for t in mapped_tables %}
+        {{ t.table_name }} (Seats: {{ t.seats|join:", " }}){% if not forloop.last %}, {% endif %}
+    {% endfor %}
+{% else %}
+    None
+{% endif %}
+</p>
+
+
+        <p><strong class="text-primary">Total Amount:</strong> ₹{{ order.total_amount }}</p>
+        <p><strong class="text-primary">Payment Mode:</strong> {{ order.payment_mode }}</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- FOOD ITEMS -->
+    {% if order.items.all %}
+      <h4 class="fw-semibold mb-3 text-primary">Ordered Food Items</h4>
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered text-center">
+          <thead>
+            <tr>
+              <th>Food Item</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.items.all %}
+              <tr>
+                <td>{{ item.food_item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>₹{{ item.total_price }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted fs-5 text-center my-3">No food items ordered.</p>
+    {% endif %}
+
+    <!-- BACK BUTTON -->
+    <div class="text-end mt-4">
+      <a href="{% url 'admin_all_orders' %}" class="btn btn-primary px-4 fw-semibold">
+        Back to Orders
+      </a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
