@@ -1,99 +1,203 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Cancellation</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f9f9f9;
         }
         .header {
-            background-color: #ff6b6b;
+            background: linear-gradient(135deg, #088080, #0e8097);
             color: white;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
-            border-radius: 5px 5px 0 0;
+            border-radius: 10px 10px 0 0;
         }
         .content {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 0 0 5px 5px;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .order-details {
-            background: white;
+            background: #f8f9fa;
+            border-left: 4px solid #088080;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .detail-item {
+            margin-bottom: 10px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            width: 150px;
+        }
+        .cancellation-policy {
+            background: #e8f7f6;
+            border: 1px solid #088080;
+            color: #066666;
             padding: 15px;
-            border-left: 4px solid #ff6b6b;
-            margin: 15px 0;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .refund-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
         }
         .footer {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #eee;
             color: #666;
-            font-size: 12px;
+            font-size: 14px;
         }
         .status {
             display: inline-block;
-            padding: 5px 10px;
-            background-color: #ff6b6b;
+            padding: 5px 15px;
+            background-color: #dc3545;
             color: white;
-            border-radius: 3px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0 10px;
             font-weight: bold;
         }
-        .refund-info {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
+        .btn-primary {
+            background: #088080;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1> Order Cancelled</h1>
-        <p>Your booking has been cancelled successfully</p>
+        <div class="logo">Bite & Seat</div>
+        <h1> Order Cancellation Confirmation</h1>
     </div>
     
     <div class="content">
-        <h2>Cancellation Details</h2>
+        <p>Dear {{ user.username }},</p>
+        
+        <p>Your order has been successfully cancelled. Here are the details:</p>
         
         <div class="order-details">
-            <p><strong>Order Number:</strong> #{{ order.id }}</p>
-            <p><strong>Booking Date:</strong> {{ order.date }}</p>
-            <p><strong>Time Slot:</strong> {{ order.time_slot }}</p>
-            <p><strong>Cancellation Status:</strong> <span class="status">Cancelled</span></p>
-            <p><strong>Seats Freed:</strong> {{ seats_freed }} seat(s)</p>
+            <div class="detail-item">
+                <span class="detail-label">Order ID:</span> #{{ order.id }}
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Booking Type:</span> {{ order.get_booking_type_display }}
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Status:</span> <span class="status">CANCELLED</span>
+            </div>
+            {% if order.date %}
+            <div class="detail-item">
+                <span class="detail-label">Booking Date:</span> {{ order.date|date:"F d, Y" }}
+            </div>
+            {% endif %}
+            {% if order.time_slot %}
+            <div class="detail-item">
+                <span class="detail-label">Time Slot:</span> {{ order.time_slot }}
+            </div>
+            {% endif %}
+            <div class="detail-item">
+                <span class="detail-label">Seats Freed:</span> {{ seats_freed }} seat(s)
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Cancellation Time:</span> {{ cancellation_time|date:"F d, Y H:i" }}
+            </div>
         </div>
         
+        <!-- Cancellation Policy Section -->
+        <div class="cancellation-policy">
+            <h3> Cancellation Policy</h3>
+            <p><strong>Our policy allows cancellations up to {{ cancellation_policy }} before the booking time.</strong></p>
+            <p>Since you cancelled within the allowed window, here's what happens:</p>
+            <ul>
+                <li>Table booking charges (if paid) will be refunded</li>
+                <li>Seats are immediately freed for other customers</li>
+                <li>Any food pre-orders may still be subject to charges</li>
+            </ul>
+        </div>
+        
+        <!-- Refund Information -->
         <div class="refund-info">
-            <h3>💸 Refund Information</h3>
-            <p><strong>Table Charges:</strong> ₹{{ order.table_charge }} refunded (if paid)</p>
-            <p><strong>Food Charges:</strong> Contact restaurant for food payment refund</p>
+            <h3> Refund Information</h3>
+            <p><strong>Table Charges:</strong> ₹{{ order.table_charge|default:"0.00" }} (if paid, will be refunded)</p>
+            <p><strong>Food Charges:</strong> Contact restaurant for food payment refund if applicable</p>
             <p><em>Refunds will be processed within 3-5 business days to your original payment method.</em></p>
         </div>
         
-        <h3>Original Order Summary</h3>
-        <p><strong>Original Total:</strong> ₹{{ order.total_amount }}</p>
+        <!-- Original Order Summary -->
+        <h3> Original Order Summary</h3>
+        <p><strong>Original Total Amount:</strong> ₹{{ order.total_amount|default:"0.00" }}</p>
         
         {% if order.items.all %}
-        <p><strong>Food Items:</strong></p>
+        <p><strong>Food Items in Order:</strong></p>
         <ul>
             {% for item in order.items.all %}
             <li>{{ item.food_item.name }} x {{ item.quantity }} = ₹{{ item.total_price }}</li>
             {% endfor %}
         </ul>
+        {% else %}
+        <p><em>No food items were included in this order.</em></p>
         {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="#" class="btn btn-primary">View Order History</a>
+            <a href="#" class="btn btn-secondary">Make New Booking</a>
+        </div>
         
         <p>If you have any questions about your cancellation or refund, please contact our support team.</p>
         
-        <div class="footer">
-            <p>Bite & Seat Restaurant</p>
-            <p>This is an automated message. Please do not reply to this email.</p>
-        </div>
+        <p>We hope to serve you again soon!</p>
+        
+        <p>Best regards,<br>
+        <strong>The Bite & Seat Team</strong></p>
+    </div>
+    
+    <div class="footer">
+        <p>© {% now "Y" %} Bite & Seat. All rights reserved.</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+        <p>Need help? Contact support: support@biteandseat.com | Phone: +91-XXXXXX-XXXX</p>
     </div>
 </body>
 </html>

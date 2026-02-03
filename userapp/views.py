@@ -465,19 +465,6 @@ def create_step1(request):
                         {"error": f"Invalid food item ID {food_id}"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                    
-                    OrderItem.objects.create(
-                        order=order,
-                        food_item=food,
-                        quantity=quantity,
-                        price=food.rate,
-                        total_price=food.rate * quantity
-                    )
-                except TblMenuItem.DoesNotExist:
-                    return Response(
-                        {"error": f"Invalid food item ID {food_id}"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
 
         order.update_total()
         return Response(
@@ -881,7 +868,7 @@ def create_feedback(request):
             order = Order.objects.get(id=order_id)
             
             # Only restrict feedback for PREBOOKED orders with today's special
-            # Allow feedback for TABLE_HOME_FOOD_COUNTER orders with today's special
+            # Allow feedback for TABLE_ONLY orders with today's special (food added via QR)
             if order.booking_type == 'PREBOOKED':
                 for order_item in order.items.all():
                     if TodaysSpecial.objects.filter(
@@ -970,7 +957,7 @@ def cancel_order(request):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Check 3-hour restriction
+    # Check 1-hour restriction
     from django.utils import timezone
     from datetime import timedelta
     
@@ -981,9 +968,9 @@ def cancel_order(request):
         current_time = timezone.now()
         
         time_difference = booking_datetime - current_time
-        if time_difference <= timedelta(hours=3):
+        if time_difference <= timedelta(hours=1):
             return Response(
-                {"error": "Cancellation not allowed within 3 hours of booking time"},
+                {"error": "Cancellation not allowed within 1 hour of booking time"},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -1001,6 +988,38 @@ def cancel_order(request):
     order.update_total()
     order.save()
     
+    # Send cancellation email
+    try:
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        
+        if order.user and order.user.email:
+            subject = f"Order Cancellation - Order #{order_id}"
+            
+            context = {
+                'order': order,
+                'seats_freed': seats_cancelled,
+                'user': order.user,
+                'cancellation_time': timezone.now(),
+                'cancellation_policy': '1 hour'  # Add policy info
+            }
+            
+            html_message = render_to_string('email/order_cancellation.html', context)
+            plain_message = strip_tags(html_message)
+            
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email='noreply@biteandseat.com',
+                recipient_list=[order.user.email],
+                html_message=html_message,
+                fail_silently=False
+            )
+            print(f"Cancellation email sent to {order.user.email}")
+    except Exception as e:
+        print(f"Failed to send cancellation email: {e}")
+
     return Response(
         {
             "message": f"Order #{order_id} cancelled successfully. {seats_cancelled} seat(s) freed.",
@@ -1061,7 +1080,7 @@ def get_todays_special(request):
                 'can_be_booked_by_users_prebooked': False,
                 'can_be_booked_by_users_table_only': True,
                 'can_be_booked_by_admin': True,
-                'message': 'Available through: 1) Admin outsider booking, 2) TABLE_HOME_FOOD_COUNTER booking'
+                'message': 'Available through: 1) Admin outsider booking, 2) TABLE_ONLY booking'
             }
         })
     
