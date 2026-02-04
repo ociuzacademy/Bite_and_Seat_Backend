@@ -101,6 +101,19 @@ class Order(models.Model):
         ('cash', 'Cash')
     ]
 
+    BOOKING_STATUS = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+    
+    booking_status = models.CharField(
+        max_length=20, 
+        choices=BOOKING_STATUS, 
+        default='pending'
+    )
+
     user = models.ForeignKey(TblUser, on_delete=models.CASCADE, null=True, blank=True)
     
     # Outsider fields (Admin booking)

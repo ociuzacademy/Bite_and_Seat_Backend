@@ -256,10 +256,12 @@ class OrderSerializer(serializers.ModelSerializer):
     slot_start_time = serializers.TimeField(source='time_slot.start_time', read_only=True)
     slot_end_time = serializers.TimeField(source='time_slot.end_time', read_only=True)
     slot_category_name = serializers.CharField(source='time_slot.category.name', read_only=True)
+    booking_status = serializers.CharField(source='get_booking_status_display', read_only=True)
+    booking_status_value = serializers.CharField(source='booking_status', read_only=True)
 
     class Meta:
         model = Order
-        fields = '__all__' 
+        fields = '__all__'
 
 
 from rest_framework import serializers
@@ -385,6 +387,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
     slot_start_time = serializers.SerializerMethodField()
     slot_end_time = serializers.SerializerMethodField()
+    booking_status_display = serializers.CharField(source='get_booking_status_display', read_only=True)
 
     class Meta:
         model = Order
@@ -403,6 +406,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'total_amount',
             'table_payment_mode', 
             'food_payment_mode', 
+            'booking_status',
+            'booking_status_display',
             'items', 
             'payments', 
             'created_at', 
@@ -544,6 +549,8 @@ class UserOrderSerializer(serializers.ModelSerializer):
     seats = serializers.SerializerMethodField()
     tables = serializers.SerializerMethodField()
     time_slot = serializers.SerializerMethodField()
+    booking_status_display = serializers.CharField(source='get_booking_status_display', read_only=True)
+    booking_status = serializers.CharField(read_only=True)
     
     def get_time_slot(self, obj):
         if obj.time_slot:
@@ -556,6 +563,8 @@ class UserOrderSerializer(serializers.ModelSerializer):
             'id',
             'user_id',
             'booking_type',
+            'booking_status',  # Shows stored value (pending/confirmed/cancelled/completed)
+            'booking_status_display', # Shows human-readable value (Pending/Confirmed/Cancelled/Completed)
             'date',
             'category',
             'time_slot',

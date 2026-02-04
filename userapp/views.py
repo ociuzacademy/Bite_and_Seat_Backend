@@ -423,6 +423,8 @@ def create_step1(request):
     serializer = OrderSerializer(data=request_data)
     if serializer.is_valid():
         order = serializer.save()
+        order.booking_status = 'pending'  # Ensure new orders start as pending
+        order.save()
 
         # ✅ If booking type is PREBOOKED or TABLE_ONLY, add food items
         if order.booking_type == 'PREBOOKED' or order.booking_type == 'TABLE_ONLY':
@@ -723,10 +725,12 @@ def make_payment(request):
         if payment_type == 'both':
             order.food_payment_mode = payment_mode_text
             order.food_payment_status = 'pending' if payment_method == 'cash' else 'paid'
-            order.save(update_fields=['table_payment_mode', 'food_payment_mode', 'table_payment_status', 'food_payment_status'])
         
-        elif payment_type == 'table':
-            order.save(update_fields=['table_payment_mode', 'table_payment_status'])
+        # Update booking status to 'confirmed' after successful payment
+        order.booking_status = 'confirmed'
+        
+        # Save all updates at once
+        order.save()
         
         return Response({
             "status": "success",
@@ -761,9 +765,12 @@ def view_order(request, order_id):
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Include booking status in response
     serializer = OrderDetailSerializer(order)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
+    response_data = serializer.data
+    
+    # The serializer already includes booking_status and booking_status_display
+    return Response(response_data, status=status.HTTP_200_OK)
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -812,6 +819,7 @@ def get_all_tables_and_seats(request):
     booked_seats = OrderSeat.objects.filter(
         order__in=Order.objects.filter(**order_filter)
     ).values_list('seat_id', flat=True)
+    
 
     # --- Step 4: Build response with seat status ---
     tables = Table.objects.prefetch_related('seats').all()
@@ -985,6 +993,7 @@ def cancel_order(request):
     # Reset order tables and charges
     order.tables = []
     order.table_charge = 0
+    order.booking_status = 'cancelled'  # Update booking status
     order.update_total()
     order.save()
     
@@ -1063,7 +1072,7 @@ def get_todays_special(request):
     from adminapp.models import TodaysSpecial
     specials = TodaysSpecial.objects.filter(date=date_obj)
     
-    # Convert to similar format as menu items
+    #Convert to similar format as menu items
     response_data = []
     for special in specials:
         response_data.append({

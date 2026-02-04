@@ -607,6 +607,10 @@ def scan_qr_complete_order(request):
                     
                     order.save()
                     
+                    # Update booking status to 'completed'
+                    order.booking_status = 'completed'
+                    order.save(update_fields=['booking_status'])
+
                     messages.success(request, f"Order #{order_id} marked as completed. Payment status updated.")
                     
                     # Fetch order details for display
@@ -652,6 +656,10 @@ def scan_qr_complete_order(request):
                 
                 order.save()
                 
+                # Update booking status to 'completed'
+                order.booking_status = 'completed'
+                order.save(update_fields=['booking_status'])
+                
                 messages.success(request, f"Order #{order_id} marked as completed. Payment status updated.")
                 
                 # Fetch order details for display
@@ -666,6 +674,7 @@ def scan_qr_complete_order(request):
                     'table_payment_status': order.table_payment_status,
                     'food_payment_status': order.food_payment_status,
                     'is_completed': order.is_completed,
+                    'booking_status': order.get_booking_status_display(),  
                 }
                 
             except Order.DoesNotExist:
