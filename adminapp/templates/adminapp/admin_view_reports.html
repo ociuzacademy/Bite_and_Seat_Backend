@@ -28,12 +28,16 @@
             <td>{{ report.description }}</td>
 
             <td>
-              {% for img in report.images.all %}
-                <img src="{{ img.image.url }}" width="70" height="70" class="rounded mb-1">
+              {% for img in report.report_images.all %}
+              <img src="{{ img.image.url }}" width="70" height="70" class="rounded mb-1"
+                style="object-fit: cover; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageModal"
+                onclick="showImage('{{ img.image.url }}')">
               {% empty %}
-                <span class="text-muted">No Images</span>
+              <span class="text-muted">No Images</span>
               {% endfor %}
             </td>
+
+
 
             <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
           </tr>
@@ -48,5 +52,28 @@
 
   </div>
 </div>
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Report Image</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" class="img-fluid rounded" alt="Report Image">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function showImage(imageUrl) {
+    document.getElementById("modalImage").src = imageUrl;
+  }
+</script>
 
 {% endblock %}

@@ -311,7 +311,7 @@ def add_time_slot(request):
         end_time = datetime.strptime(end_time_str, "%H:%M")
 
         # Remove existing slots for selected category (optional)
-        TblTimeSlot.objects.filter(category=category).delete()
+        # TblTimeSlot.objects.filter(category=category).delete()
 
         current_time = start_time
         while current_time < end_time:
