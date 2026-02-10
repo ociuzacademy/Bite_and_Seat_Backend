@@ -742,7 +742,19 @@ def admin_book_outsider(request):
         elif 18 <= current_hour < 22:
             time_based_category = "Dinner"
         else:
-            time_based_category = "Dinner"  # Default
+            # Outside regular hours - check if any slots exist for today
+            # Find the nearest future slot for today
+            future_slots = TblTimeSlot.objects.filter(
+                start_time__gte=now
+            ).order_by('start_time').first()
+            
+            if future_slots:
+                selected_category = future_slots.category
+                selected_slot = future_slots
+                time_based_category = selected_category.name
+            else:
+                # No future slots today, use default category logic
+                time_based_category = "Dinner"  # Default
             
         try:
             selected_category = Category.objects.get(name=time_based_category)
@@ -1129,7 +1141,8 @@ def todays_special_page(request):
     else:
         selected_date = date.today()
     
-    specials = TodaysSpecial.objects.filter(date=selected_date)
+    # Order by category and name for better organization
+    specials = TodaysSpecial.objects.filter(date=selected_date).order_by('category__name', 'name')
     
     return render(request, 'adminapp/todays_special_list.html', {
         'specials': specials,
@@ -1141,6 +1154,7 @@ def add_todays_special_page(request):
     categories = Category.objects.all()
     
     if request.method == 'POST':
+        # Handle form submission (both buttons)
         name = request.POST.get('name')
         category_id = request.POST.get('category')
         rate = request.POST.get('rate')
@@ -1166,8 +1180,15 @@ def add_todays_special_page(request):
             )
             
             messages.success(request, f"Today's special '{name}' added successfully!")
-            return redirect('todays_special_page')
             
+            # Check which button was clicked
+            if 'add_another' in request.POST:
+                # Stay on the form to add another
+                return redirect('add_todays_special_page')
+            else:
+                # Redirect to list page
+                return redirect('todays_special_page')
+                
         except ValueError:
             messages.error(request, "Invalid date format. Use YYYY-MM-DD.")
     

@@ -170,10 +170,9 @@ from .serializers import MenuItemSerializer
 
 # ✅ API View (for JSON data)
 class MenuItemListAPIView(generics.ListAPIView):
-    queryset = MenuItem.objects.select_related('category').all()
+    queryset = TblMenuItem.objects.select_related('category').all()
     serializer_class = MenuItemSerializer
     permission_classes = [permissions.AllowAny]
-
 
 
 class MenuByCategoryAPIView(generics.ListAPIView):
@@ -435,26 +434,7 @@ def create_step1(request):
                 try:
                     food = TblMenuItem.objects.get(id=food_id)
                     
-                    # Check if this is a today's special item
-                    from adminapp.models import TodaysSpecial
-                    from datetime import date
-                    today = date.today()
-                    
-                    # Only restrict today's special for PREBOOKED, not for TABLE_ONLY
-                    if order.booking_type == 'PREBOOKED' and TodaysSpecial.objects.filter(
-                        name=food.name, 
-                        category=food.category,
-                        date=today
-                    ).exists():
-                        return Response(
-                            {
-                                "error": f"Today's special item '{food.name}' cannot be booked through pre-booking",
-                                "error_code": "TODAYS_SPECIAL_RESTRICTED",
-                                "message": "This item is only available through admin outsider booking or TABLE_ONLY booking"
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                    
+                    # Today's special items are now allowed for all booking types
                     OrderItem.objects.create(
                         order=order,
                         food_item=food,
@@ -1072,7 +1052,7 @@ def get_todays_special(request):
     from adminapp.models import TodaysSpecial
     specials = TodaysSpecial.objects.filter(date=date_obj)
     
-    #Convert to similar format as menu items
+    # Convert to similar format as menu items
     response_data = []
     for special in specials:
         response_data.append({
@@ -1086,10 +1066,10 @@ def get_todays_special(request):
             'is_todays_special': True,
             'item_source': "Today's Special",  # Add this line
             'booking_restrictions': {
-                'can_be_booked_by_users_prebooked': False,
+                'can_be_booked_by_users_prebooked': True,
                 'can_be_booked_by_users_table_only': True,
                 'can_be_booked_by_admin': True,
-                'message': 'Available through: 1) Admin outsider booking, 2) TABLE_ONLY booking'
+                'message': 'Available through all booking types'
             }
         })
     

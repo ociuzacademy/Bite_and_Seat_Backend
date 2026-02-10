@@ -82,14 +82,13 @@ class CategorySerializer(serializers.ModelSerializer):
 class MenuItemSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    # is_todays_special = serializers.SerializerMethodField()  # This should stay as is
-    # todays_special_booking_info = serializers.SerializerMethodField()
+    is_todays_special = serializers.SerializerMethodField()
+    todays_special_booking_info = serializers.SerializerMethodField()
     item_source = serializers.SerializerMethodField()
 
     class Meta:
         model = MenuItem
-        fields = ['id', 'name', 'image', 'rate', 'item_per_plate', 'category', 'item_source']
-        #, 'is_todays_special', 'todays_special_booking_info'
+        fields = ['id', 'name', 'image', 'rate', 'item_per_plate', 'category', 'is_todays_special', 'todays_special_booking_info', 'item_source']
     
     def get_image(self, obj):
         if obj.image:
@@ -109,9 +108,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
     def get_todays_special_booking_info(self, obj):
         if self.get_is_todays_special(obj):
             return {
-                'allowed_booking_types': ['TABLE_ONLY', 'ONSPOT'],
-                'restricted_booking_types': ['PREBOOKED'],
-                'message': 'Counter booking only'
+                'allowed_booking_types': ['TABLE_ONLY', 'ONSPOT', 'PREBOOKED'],
+                'restricted_booking_types': [],
+                'message': 'Available through all booking types'
             }
         return None
     
@@ -130,10 +129,40 @@ class CategorySerializer(serializers.ModelSerializer):
     
 class DailyMenuSerializer(serializers.ModelSerializer):
     items = MenuItemSerializer(many=True, read_only=True)  # nested items
+    todays_specials = serializers.SerializerMethodField()
 
     class Meta:
         model = TblDailyMenu
-        fields = ['id', 'date', 'items']
+        fields = ['id', 'date', 'items', 'todays_specials']
+    
+    def get_todays_specials(self, obj):
+        from adminapp.models import TodaysSpecial
+        from datetime import date
+        
+        today = obj.date if obj.date else date.today()
+        specials = TodaysSpecial.objects.filter(date=today)
+        
+        specials_list = []
+        for special in specials:
+            specials_list.append({
+                'id': special.id,
+                'name': special.name,
+                'image': special.image.url if special.image else None,
+                'rate': str(special.rate),
+                'item_per_plate': special.item_per_plate,
+                'category': special.category.id,
+                'category_name': special.category.name,
+                'is_todays_special': True,
+                'item_source': "Today's Special",
+                'booking_restrictions': {
+                    'can_be_booked_by_users_prebooked': True,
+                    'can_be_booked_by_users_table_only': True,
+                    'can_be_booked_by_admin': True,
+                    'message': 'Available through all booking types'
+                }
+            })
+        
+        return specials_list
     
         
 from rest_framework import serializers
