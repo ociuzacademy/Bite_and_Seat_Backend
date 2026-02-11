@@ -114,28 +114,27 @@
       <table class="table align-middle text-center shadow-sm">
         <thead>
           <tr>
-            <th>Sl No</th>
             <th>ID</th>
             <th>User</th>
             <th>Booking Type</th>
             <th>Date</th>
             <th>Time Slot</th>
             <th>Total (₹)</th>
+            <th>Booking Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for order in orders %}
           <tr>
-            <td><strong>{{ forloop.counter }}</strong></td>
-            <td>#{{ order.id }}</td>
+            <td><strong>#{{ order.id }}</strong></td>
             <td>
-              {% if order.user %}
-                  {{ order.user.username }}
-              {% else %}
-                  {{ order.outsider_name }} <span class="text-muted">(Outsider)</span>
-              {% endif %}
-            </td>
+    {% if order.user %}
+        {{ order.user.username }}
+    {% else %}
+        {{ order.outsider_name }} <span class="text-muted">(Outsider)</span>
+    {% endif %}
+</td>
 
             <td>
               {% if order.booking_type == 'TABLE_ONLY' %}
@@ -148,9 +147,31 @@
                 <span class="badge bg-secondary">Unknown</span>
               {% endif %}
             </td>
-            <td>{{ order.date|date:"M. d, Y" }}</td>
+            <td>{{ order.date }}</td>
             <td>{{ order.time_slot|default:"None" }}</td>
             <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
+            <td>
+  {% if order.booking_status == 'pending' %}
+    <span class="badge bg-warning text-dark">
+      {{ order.get_booking_status_display }}
+    </span>
+  {% elif order.booking_status == 'confirmed' %}
+    <span class="badge bg-success">
+      {{ order.get_booking_status_display }}
+    </span>
+  {% elif order.booking_status == 'cancelled' %}
+    <span class="badge bg-danger">
+      {{ order.get_booking_status_display }}
+    </span>
+  {% elif order.booking_status == 'completed' %}
+    <span class="badge bg-primary">
+      {{ order.get_booking_status_display }}
+    </span>
+  {% else %}
+    <span class="badge bg-secondary">Unknown</span>
+  {% endif %}
+</td>
+
             <td>
               <div class="btn-group">
                 <a href="{% url 'admin_order_detail' order.id %}" 
@@ -170,7 +191,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-muted py-4">
+            <td colspan="7" class="text-muted py-4">
               No orders found at the moment.
             </td>
           </tr>

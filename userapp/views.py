@@ -4,6 +4,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SeatBookingSerializer, UserSerializer
 from .models import *
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import TblTimeSlot, Category
+from datetime import datetime, timedelta
+from django.shortcuts import render
+from django.db.models import Case, When, IntegerField
+from .models import TblTimeSlot
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from datetime import datetime, timedelta
+from .models import TblTimeSlot, Category
+from django.db.models import Case, When, IntegerField
 # class RegisterUserAPI(APIView):
 #     def post(self, request):
 #         serializer = UserSerializer(data=request.data)
@@ -431,22 +442,49 @@ def create_step1(request):
             for item_data in items:
                 food_id = item_data.get('food_item')
                 quantity = int(item_data.get('quantity', 1))
+                
+                # First check if this is a today's special item
+                from adminapp.models import TodaysSpecial
+                from datetime import date
+                today = order.date if order.date else date.today()
+                
+                # Check if food_id exists in TodaysSpecial for today
                 try:
-                    food = TblMenuItem.objects.get(id=food_id)
-                    
-                    # Today's special items are now allowed for all booking types
-                    OrderItem.objects.create(
-                        order=order,
-                        food_item=food,
-                        quantity=quantity,
-                        price=food.rate,
-                        total_price=food.rate * quantity
-                    )
-                except TblMenuItem.DoesNotExist:
-                    return Response(
-                        {"error": f"Invalid food item ID {food_id}"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    special_item = TodaysSpecial.objects.get(id=food_id, date=today)
+                    # This is a today's special item - find or create corresponding TblMenuItem
+                    try:
+                        # Try to find existing TblMenuItem with same name and category
+                        food = TblMenuItem.objects.get(
+                            name=special_item.name,
+                            category=special_item.category
+                        )
+                    except TblMenuItem.DoesNotExist:
+                        # Create a new TblMenuItem for this today's special
+                        food = TblMenuItem.objects.create(
+                            name=special_item.name,
+                            category=special_item.category,
+                            rate=special_item.rate,
+                            item_per_plate=special_item.item_per_plate,
+                            image=special_item.image if special_item.image else None
+                        )
+                except TodaysSpecial.DoesNotExist:
+                    # Not a today's special - treat as regular menu item
+                    try:
+                        food = TblMenuItem.objects.get(id=food_id)
+                    except TblMenuItem.DoesNotExist:
+                        return Response(
+                            {"error": f"Invalid food item ID {food_id}"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                
+                # Create order item
+                OrderItem.objects.create(
+                    order=order,
+                    food_item=food,
+                    quantity=quantity,
+                    price=food.rate,
+                    total_price=food.rate * quantity
+                )
 
         order.update_total()
         return Response(
@@ -1074,3 +1112,61 @@ def get_todays_special(request):
         })
     
     return Response(response_data)
+
+# -------------------------------
+# List all time slots
+# -------------------------------
+def time_slot_list(request):
+    # Custom order: Breakfast → Lunch → Evening Snacks → Dinner → others
+    order_priority = Case(
+        When(category__name='Breakfast', then=1),
+        When(category__name='Lunch', then=2),
+        When(category__name='Evening Snacks', then=3),
+        When(category__name='Dinner', then=4),
+        default=5,
+        output_field=IntegerField(),
+    )
+
+    slots = TblTimeSlot.objects.all().order_by(order_priority, 'start_time')
+    return render(request, 'adminapp/time_slot_list.html', {'slots': slots})
+
+
+# -------------------------------
+# Add time slots (manual or auto 30-min slots)
+# -------------------------------
+def add_time_slot(request):
+    categories = Category.objects.exclude(name="Dinner")  # Remove Dinner category
+
+    if request.method == 'POST':
+        category_id = request.POST.get('category')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+
+        category = Category.objects.get(id=category_id)
+
+        # Convert to datetime objects
+        start_time = datetime.strptime(start_time_str, "%H:%M")
+        end_time = datetime.strptime(end_time_str, "%H:%M")
+
+        # Remove existing slots for selected category (optional)
+        # TblTimeSlot.objects.filter(category=category).delete()
+
+        current_time = start_time
+        while current_time < end_time:
+            slot_start = current_time.time()
+            slot_end = (current_time + timedelta(minutes=30)).time()
+
+            if slot_end > end_time.time():
+                slot_end = end_time.time()
+
+            TblTimeSlot.objects.create(
+                category=category,
+                start_time=slot_start,
+                end_time=slot_end,
+            )
+            current_time += timedelta(minutes=30)
+
+        messages.success(request, "Time slots added successfully!")
+        return redirect('time_slot_list')
+
+    return render(request, 'adminapp/add_time_slot.html', {'categories': categories})
