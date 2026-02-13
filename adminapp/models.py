@@ -21,14 +21,20 @@ class Category(models.Model):
 class MenuItem(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='menu_images/')
+    image = models.ImageField(upload_to='menu_images/', null=True, blank=True)
     rate = models.DecimalField(max_digits=8, decimal_places=2)
     item_per_plate = models.CharField(max_length=100)
+    is_todays_special = models.BooleanField(default=False)
+    special_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
+        if self.is_todays_special and self.special_date:
+            return f"{self.name} (Today's Special - {self.special_date})"
         return self.name
 
 
+# No longer used - Use MenuItem instead
+# This model will be removed after data migration
 class TblMenuItem(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
@@ -37,23 +43,25 @@ class TblMenuItem(models.Model):
     item_per_plate = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (OLD MODEL)"
     
 
 class DailyMenu(models.Model):
     date = models.DateField(unique=True)
-    items = models.ManyToManyField(TblMenuItem)  # selected menu items for that day
+    items = models.ManyToManyField(MenuItem)  # selected menu items for that day
 
     def __str__(self):
         return f"Menu for {self.date.strftime('%A, %d %B %Y')}"
     
 
+# No longer used - Use DailyMenu instead
+# This model will be removed after data migration
 class TblDailyMenu(models.Model):
     date = models.DateField(unique=True)
     items = models.ManyToManyField(TblMenuItem)  # selected menu items for that day
 
     def __str__(self):
-        return f"Menu for {self.date.strftime('%A, %d %B %Y')}"
+        return f"Menu for {self.date.strftime('%A, %d %B %Y')} (OLD MODEL)"
     
 
 class TimeSlot(models.Model):
@@ -69,9 +77,8 @@ class TimeSlot(models.Model):
         return f"{self.category.name} ({self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')})"
     
 
-
-
-
+# No longer used - Use TimeSlot instead
+# This model will be removed after data migration
 class TblTimeSlot(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     start_time = models.TimeField()
@@ -82,7 +89,7 @@ class TblTimeSlot(models.Model):
         ordering = ['category__name', 'start_time']  # Sort by category name and time
 
     def __str__(self):
-        return f"{self.category.name} ({self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')})"
+        return f"{self.category.name} ({self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}) (OLD MODEL)"
     
 
 
@@ -125,6 +132,8 @@ class Seat(models.Model):
         status = "Occupied" if self.is_occupied else "Not Occupied"
         return f"{self.table.table_name} - Seat {self.seat_number} (₹{self.seat_price}) - {status}"
 
+# No longer used - Use MenuItem with is_todays_special and special_date instead
+# This model will be removed after data migration
 class TodaysSpecial(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
@@ -135,4 +144,4 @@ class TodaysSpecial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} - {self.date} ({self.category.name}) - Today's Special"
+        return f"{self.name} - {self.date} ({self.category.name}) - Today's Special (OLD MODEL)"

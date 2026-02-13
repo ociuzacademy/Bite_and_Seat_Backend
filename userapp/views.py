@@ -181,7 +181,7 @@ from .serializers import MenuItemSerializer
 
 # ✅ API View (for JSON data)
 class MenuItemListAPIView(generics.ListAPIView):
-    queryset = TblMenuItem.objects.select_related('category').all()
+    queryset = MenuItem.objects.select_related('category').all()
     serializer_class = MenuItemSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -255,7 +255,7 @@ def view_all_selections(request):
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import TblTimeSlot
+from .models import TimeSlot
 from .serializers import TimeSlotSerializer
 
 @api_view(['GET'])
@@ -268,8 +268,8 @@ def user_time_slots(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Filter slots by category ID
-    slots = TblTimeSlot.objects.filter(category_id=category_id).order_by('start_time')
+    # Filter slots by category ID - using unified TimeSlot model
+    slots = TimeSlot.objects.filter(category_id=category_id).order_by('start_time')
 
     if not slots.exists():
         return Response(
@@ -324,8 +324,8 @@ def daily_menus_api(request):
     else:
         selected_date = date.today()
 
-    # Get the first matching menu for the date
-    menu = TblDailyMenu.objects.prefetch_related('items').filter(date=selected_date).first()
+    # Get the first matching menu for the date - using unified DailyMenu model
+    menu = DailyMenu.objects.prefetch_related('items').filter(date=selected_date).first()
 
     if not menu:
         return Response(
@@ -423,7 +423,7 @@ from .models import OrderSeat
 @api_view(['POST'])
 def create_step1(request):
     from .models import OrderItem
-    from adminapp.models import TblMenuItem
+    from adminapp.models import MenuItem
 
     # 👇 Default to today's date if not provided
     request_data = request.data.copy()
@@ -443,39 +443,14 @@ def create_step1(request):
                 food_id = item_data.get('food_item')
                 quantity = int(item_data.get('quantity', 1))
                 
-                # First check if this is a today's special item
-                from adminapp.models import TodaysSpecial
-                from datetime import date
-                today = order.date if order.date else date.today()
-                
-                # Check if food_id exists in TodaysSpecial for today
+                # Get food item directly from MenuItem (unified model)
                 try:
-                    special_item = TodaysSpecial.objects.get(id=food_id, date=today)
-                    # This is a today's special item - find or create corresponding TblMenuItem
-                    try:
-                        # Try to find existing TblMenuItem with same name and category
-                        food = TblMenuItem.objects.get(
-                            name=special_item.name,
-                            category=special_item.category
-                        )
-                    except TblMenuItem.DoesNotExist:
-                        # Create a new TblMenuItem for this today's special
-                        food = TblMenuItem.objects.create(
-                            name=special_item.name,
-                            category=special_item.category,
-                            rate=special_item.rate,
-                            item_per_plate=special_item.item_per_plate,
-                            image=special_item.image if special_item.image else None
-                        )
-                except TodaysSpecial.DoesNotExist:
-                    # Not a today's special - treat as regular menu item
-                    try:
-                        food = TblMenuItem.objects.get(id=food_id)
-                    except TblMenuItem.DoesNotExist:
-                        return Response(
-                            {"error": f"Invalid food item ID {food_id}"},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                    food = MenuItem.objects.get(id=food_id)
+                except MenuItem.DoesNotExist:
+                    return Response(
+                        {"error": f"Invalid food item ID {food_id}"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 
                 # Create order item
                 OrderItem.objects.create(
@@ -827,10 +802,10 @@ def get_all_tables_and_seats(request):
         order_filter["category_id"] = category_id
     if time_slot_id:
         try:
-            slot = TblTimeSlot.objects.get(id=time_slot_id)
+            slot = TimeSlot.objects.get(id=time_slot_id)
             # Match time slot string (example: "10:00 AM - 12:00 PM")
             order_filter["time_slot_id"] = time_slot_id
-        except TblTimeSlot.DoesNotExist:
+        except TimeSlot.DoesNotExist:
             return Response({"error": "Invalid time_slot ID"}, status=status.HTTP_404_NOT_FOUND)
 
     # --- Step 3: Get booked seat IDs ---
@@ -886,25 +861,14 @@ def create_feedback(request):
         # Check if any food items in the order are today's special
         order_id = request.data.get('order')
         if order_id:
-            from adminapp.models import TodaysSpecial
             from datetime import date
             today = date.today()
             
             # Get the order
             order = Order.objects.get(id=order_id)
             
-            # Only restrict feedback for PREBOOKED orders with today's special
-            # Allow feedback for TABLE_ONLY orders with today's special (food added via QR)
-            if order.booking_type == 'PREBOOKED':
-                for order_item in order.items.all():
-                    if TodaysSpecial.objects.filter(
-                        name=order_item.food_item.name,
-                        category=order_item.food_item.category,
-                        date=today
-                    ).exists():
-                        return Response({
-                            "error": f"Cannot submit feedback for PREBOOKED order containing today's special items"
-                        }, status=status.HTTP_400_BAD_REQUEST)
+            # No restrictions - today's special items can be booked via all booking types
+            # Feedback allowed for all orders regardless of today's special items
         
         serializer.save()
         return Response({
@@ -1087,8 +1051,11 @@ def get_todays_special(request):
         from datetime import date
         date_obj = date.today()
     
-    from adminapp.models import TodaysSpecial
-    specials = TodaysSpecial.objects.filter(date=date_obj)
+    from adminapp.models import MenuItem
+    specials = MenuItem.objects.filter(
+        is_todays_special=True, 
+        special_date=date_obj
+    )
     
     # Convert to similar format as menu items
     response_data = []
@@ -1102,7 +1069,7 @@ def get_todays_special(request):
             'category': special.category.id,
             'category_name': special.category.name,
             'is_todays_special': True,
-            'item_source': "Today's Special",  # Add this line
+            'item_source': "Today's Special",
             'booking_restrictions': {
                 'can_be_booked_by_users_prebooked': True,
                 'can_be_booked_by_users_table_only': True,

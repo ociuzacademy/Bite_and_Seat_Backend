@@ -83,12 +83,14 @@ class MenuItemSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     is_todays_special = serializers.SerializerMethodField()
+    special_date = serializers.DateField(read_only=True)
     todays_special_booking_info = serializers.SerializerMethodField()
     item_source = serializers.SerializerMethodField()
 
     class Meta:
         model = MenuItem
-        fields = ['id', 'name', 'image', 'rate', 'item_per_plate', 'category', 'is_todays_special', 'todays_special_booking_info', 'item_source']
+        fields = ['id', 'name', 'image', 'rate', 'item_per_plate', 'category', 
+                  'is_todays_special', 'special_date', 'todays_special_booking_info', 'item_source']
     
     def get_image(self, obj):
         if obj.image:
@@ -96,14 +98,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
         return None
     
     def get_is_todays_special(self, obj):
-        from adminapp.models import TodaysSpecial
         from datetime import date
         today = date.today()
-        return TodaysSpecial.objects.filter(
-            name=obj.name,
-            category=obj.category,
-            date=today
-        ).exists()
+        return obj.is_todays_special and obj.special_date == today
     
     def get_todays_special_booking_info(self, obj):
         if self.get_is_todays_special(obj):
@@ -254,21 +251,19 @@ class TableSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     food_item_name = serializers.CharField(source='food_item.name', read_only=True)
     is_todays_special = serializers.SerializerMethodField()
-    item_source = serializers.SerializerMethodField()  # Add this line
+    item_source = serializers.SerializerMethodField()
+    special_date = serializers.DateField(source='food_item.special_date', read_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'food_item', 'food_item_name', 'quantity', 'price', 'total_price', 'is_todays_special', 'item_source']
+        fields = ['id', 'food_item', 'food_item_name', 'quantity', 'price', 'total_price', 
+                  'is_todays_special', 'special_date', 'item_source']
     
     def get_is_todays_special(self, obj):
-        from adminapp.models import TodaysSpecial
         from datetime import date
         today = date.today()
-        return TodaysSpecial.objects.filter(
-            name=obj.food_item.name,
-            category=obj.food_item.category,
-            date=today
-        ).exists()
+        food_item = obj.food_item
+        return food_item.is_todays_special and food_item.special_date == today
     
     def get_item_source(self, obj):
         if self.get_is_todays_special(obj):
@@ -542,20 +537,18 @@ class OrderItemsSerializer(serializers.ModelSerializer):
     food_name = serializers.CharField(source='food_item.name')
     is_todays_special = serializers.SerializerMethodField()
     item_source = serializers.SerializerMethodField()
+    special_date = serializers.DateField(source='food_item.special_date', read_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ['food_name', 'quantity', 'price', 'total_price', 'is_todays_special', 'item_source']
+        fields = ['food_name', 'quantity', 'price', 'total_price', 
+                  'is_todays_special', 'special_date', 'item_source']
     
     def get_is_todays_special(self, obj):
-        from adminapp.models import TodaysSpecial
         from datetime import date
         today = date.today()
-        return TodaysSpecial.objects.filter(
-            name=obj.food_item.name,
-            category=obj.food_item.category,
-            date=today
-        ).exists()
+        food_item = obj.food_item
+        return food_item.is_todays_special and food_item.special_date == today
     
     def get_item_source(self, obj):
         if self.get_is_todays_special(obj):
