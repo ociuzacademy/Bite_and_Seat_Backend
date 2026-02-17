@@ -284,7 +284,6 @@ def time_slot_list(request):
         When(category__name='Breakfast', then=1),
         When(category__name='Lunch', then=2),
         When(category__name='Evening Snacks', then=3),
-        When(category__name='Dinner', then=4),
         default=5,
         output_field=IntegerField(),
     )
@@ -684,6 +683,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from decimal import Decimal
 from .models import *
+from adminapp.models import MenuItem
 from userapp.models import Table, Seat
 from adminapp.models import TblMenuItem, TblDailyMenu
 from django.utils import timezone
@@ -1168,6 +1168,7 @@ def add_todays_special_page(request):
             from datetime import datetime
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
             
+            # Create in old table for backward compatibility
             TodaysSpecial.objects.create(
                 name=name,
                 category_id=category_id,
@@ -1176,6 +1177,24 @@ def add_todays_special_page(request):
                 date=date_obj,
                 image=image
             )
+            
+            # Create/update in new MenuItem table
+            menu_item, created = MenuItem.objects.update_or_create(
+                name=name,
+                category_id=category_id,
+                defaults={
+                    'rate': rate,
+                    'item_per_plate': item_per_plate,
+                    'image': image,
+                    'is_todays_special': True,
+                    'special_date': date_obj
+                }
+            )
+            
+            if created:
+                print(f"✅ Created new MenuItem: {name} (ID: {menu_item.id})")
+            else:
+                print(f"✅ Updated existing MenuItem: {name} (ID: {menu_item.id})")
             
             messages.success(request, f"Today's special '{name}' added successfully!")
             
