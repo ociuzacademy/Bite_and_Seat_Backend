@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SeatBookingSerializer, UserSerializer
 from .models import *
+from adminapp.models import MenuItem
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import TblTimeSlot, Category
 from datetime import datetime, timedelta
@@ -448,7 +449,7 @@ def create_step1(request):
                     food = MenuItem.objects.get(id=food_id)
                 except MenuItem.DoesNotExist:
                     return Response(
-                        {"error": f"Invalid food item ID {food_id}"},
+                        {"error": f"Invalid food item ID {food_id}. Please check if this item exists in the menu."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
