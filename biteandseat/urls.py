@@ -18,14 +18,35 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.shortcuts import render
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('adminapp/', include('adminapp.urls')),
     path('userapp/', include('userapp.urls')),
+    path('test-404/', lambda request: render(request, '404.html'), name='test_404'),
 ]
+
+# Custom error handlers
+handler404 = 'adminapp.views.custom_404_view'
+
+# Serve static and media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Serve static and media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Custom 404 error handler
+def custom_404_view(request, exception):
+    return render(request, '404.html', status=404)
 

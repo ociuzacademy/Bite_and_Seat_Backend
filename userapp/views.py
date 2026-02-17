@@ -947,7 +947,7 @@ def cancel_order(request):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Check 1-hour restriction
+    # Check 30-minute restriction
     from django.utils import timezone
     from datetime import timedelta
     
@@ -958,9 +958,9 @@ def cancel_order(request):
         current_time = timezone.now()
         
         time_difference = booking_datetime - current_time
-        if time_difference <= timedelta(hours=1):
+        if time_difference <= timedelta(minutes=30):
             return Response(
-                {"error": "Cancellation not allowed within 1 hour of booking time"},
+                {"error": "Cancellation not allowed within 30 minutes of booking time"},
                 status=status.HTTP_400_BAD_REQUEST
             )
     

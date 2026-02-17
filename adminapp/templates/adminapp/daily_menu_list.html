@@ -138,7 +138,11 @@
                     <ul>
                         {% for item in menu.items.all %}
                             <li>
-                                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="food-image">
+                                {% if item.image and item.image.name %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="food-image">
+                                {% else %}
+                                    <div class="food-image-placeholder" style="width: 50px; height: 50px; background-color: #f8f9fa; display: inline-block; border: 1px solid #dee2e6; border-radius: 4px;"></div>
+                                {% endif %}
                                 <div class="food-info">
                                     <span class="food-name">{{ item.name }}</span>
                                     <span class="category">{{ item.category.name }}</span>

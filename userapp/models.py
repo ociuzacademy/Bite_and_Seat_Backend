@@ -165,7 +165,7 @@ class OrderSeat(models.Model):
 
     def cancel_seat(self):
         """
-        Cancel this seat booking if more than 1 hour before booking time
+        Cancel this seat booking if more than 30 minutes before booking time
         Returns: (success, message)
         """
         from django.utils import timezone
@@ -184,10 +184,10 @@ class OrderSeat(models.Model):
         )
         current_time = timezone.now()
         
-        # Check if less than 1 hour before booking
+        # Check if less than 30 minutes before booking
         time_difference = booking_datetime - current_time
-        if time_difference <= timedelta(hours=1):
-            return False, "Cancellation not allowed within 1 hour of booking time"
+        if time_difference <= timedelta(minutes=30):
+            return False, "Cancellation not allowed within 30 minutes of booking time"
         
         # Free the seat
         self.seat.is_occupied = False

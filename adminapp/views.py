@@ -430,7 +430,10 @@ def admin_all_orders(request):
     orders = Order.objects.all().order_by('-date', '-id')
     return render(request, 'adminapp/admin_all_orders.html', {'orders': orders})
 
-
+def admin_cancelled_orders(request):
+    # Show only cancelled orders, latest first
+    orders = Order.objects.filter(booking_status='cancelled').order_by('-date', '-id')
+    return render(request, 'adminapp/admin_cancelled_orders.html', {'orders': orders})
 
 from django.shortcuts import render, get_object_or_404
 from userapp.models import Table
@@ -1361,3 +1364,12 @@ def admin_add_food_to_order(request, order_id):
     }
     
     return render(request, 'adminapp/admin_add_food_to_order.html', context)
+
+# Custom 404 error handler
+def custom_404_view(request, exception):
+    print("="*50)
+    print("CUSTOM 404 VIEW CALLED")
+    print(f"Request path: {request.path}")
+    print(f"Exception: {exception}")
+    print("="*50)
+    return render(request, '404.html', status=404)

@@ -456,6 +456,16 @@
                 </li>
                 
                 <li>
+                    <a href="#ordersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-shopping-cart"></i> Orders
+                    </a>
+                    <ul class="collapse list-unstyled" id="ordersSubmenu">
+                        <li><a href="{% url 'admin_all_orders' %}"><i class="fas fa-list"></i> All Orders</a></li>
+                        <li><a href="{% url 'admin_cancelled_orders' %}"><i class="fas fa-ban" style="color: #ff6b6b;"></i> Cancelled Orders</a></li>
+                    </ul>
+                </li>
+                
+                <li>
                     <a href="#todaysSpecialSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="fas fa-star"></i> Today's Special
                     </a>
@@ -464,6 +474,7 @@
                         <li><a href="/adminapp/add-todays-special-page/"><i class="fas fa-plus-circle"></i> Add Today's Special</a></li>
                     </ul>
                 </li>
+                
                 <li>
                     <!-- <a href=""><i class="fas fa-sign-out-alt"></i> Logout</a> -->
                 </li>
@@ -522,14 +533,31 @@
                             </div>
                         </a>
                     </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{% url 'admin_all_orders' %}" style="text-decoration: none;">
+                            <div class="card">
+                                <p class="c-txt">All Orders</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{% url 'admin_cancelled_orders' %}" style="text-decoration: none;">
+                            <div class="card">
+                                <p class="c-txt">Cancelled Orders</p>
+                            </div>
+                        </a>
+                    </div>
 
                     <div class="col-md-4">
                         <a href="{% url 'admin_all_orders' %}" style="text-decoration: none;">
                             <div class="card">
-                                <p class="c-txt">View Orders</p>
+                                <p class="c-txt">All Orders</p>
                             </div>
                         </a>
                     </div>
+
                     <div class="col-md-4">
                         <a href="{% url 'admin_view_all_reports' %}" style="text-decoration: none;">
                             <div class="card">
