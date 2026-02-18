@@ -4,6 +4,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SeatBookingSerializer, UserSerializer
 from .models import *
+from adminapp.models import MenuItem
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import TblTimeSlot, Category
+from datetime import datetime, timedelta
+from django.shortcuts import render
+from django.db.models import Case, When, IntegerField
+from .models import TblTimeSlot
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from datetime import datetime, timedelta
+from .models import TblTimeSlot, Category
+from django.db.models import Case, When, IntegerField
 # class RegisterUserAPI(APIView):
 #     def post(self, request):
 #         serializer = UserSerializer(data=request.data)
@@ -175,7 +187,6 @@ class MenuItemListAPIView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
 
-
 class MenuByCategoryAPIView(generics.ListAPIView):
     serializer_class = MenuItemSerializer
     permission_classes = [permissions.AllowAny]
@@ -245,7 +256,7 @@ def view_all_selections(request):
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import TblTimeSlot
+from .models import TimeSlot
 from .serializers import TimeSlotSerializer
 
 @api_view(['GET'])
@@ -258,8 +269,8 @@ def user_time_slots(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Filter slots by category ID
-    slots = TblTimeSlot.objects.filter(category_id=category_id).order_by('start_time')
+    # Filter slots by category ID - using unified TimeSlot model
+    slots = TimeSlot.objects.filter(category_id=category_id).order_by('start_time')
 
     if not slots.exists():
         return Response(
@@ -314,8 +325,8 @@ def daily_menus_api(request):
     else:
         selected_date = date.today()
 
-    # Get the first matching menu for the date
-    menu = TblDailyMenu.objects.prefetch_related('items').filter(date=selected_date).first()
+    # Get the first matching menu for the date - using unified DailyMenu model
+    menu = DailyMenu.objects.prefetch_related('items').filter(date=selected_date).first()
 
     if not menu:
         return Response(
@@ -413,7 +424,7 @@ from .models import OrderSeat
 @api_view(['POST'])
 def create_step1(request):
     from .models import OrderItem
-    from adminapp.models import TblMenuItem
+    from adminapp.models import MenuItem
 
     # 👇 Default to today's date if not provided
     request_data = request.data.copy()
@@ -432,41 +443,24 @@ def create_step1(request):
             for item_data in items:
                 food_id = item_data.get('food_item')
                 quantity = int(item_data.get('quantity', 1))
+                
+                # Get food item directly from MenuItem (unified model)
                 try:
-                    food = TblMenuItem.objects.get(id=food_id)
-                    
-                    # Check if this is a today's special item
-                    from adminapp.models import TodaysSpecial
-                    from datetime import date
-                    today = date.today()
-                    
-                    # Only restrict today's special for PREBOOKED, not for TABLE_ONLY
-                    if order.booking_type == 'PREBOOKED' and TodaysSpecial.objects.filter(
-                        name=food.name, 
-                        category=food.category,
-                        date=today
-                    ).exists():
-                        return Response(
-                            {
-                                "error": f"Today's special item '{food.name}' cannot be booked through pre-booking",
-                                "error_code": "TODAYS_SPECIAL_RESTRICTED",
-                                "message": "This item is only available through admin outsider booking or TABLE_ONLY booking"
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                    
-                    OrderItem.objects.create(
-                        order=order,
-                        food_item=food,
-                        quantity=quantity,
-                        price=food.rate,
-                        total_price=food.rate * quantity
-                    )
-                except TblMenuItem.DoesNotExist:
+                    food = MenuItem.objects.get(id=food_id)
+                except MenuItem.DoesNotExist:
                     return Response(
-                        {"error": f"Invalid food item ID {food_id}"},
+                        {"error": f"Invalid food item ID {food_id}. Please check if this item exists in the menu."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
+                
+                # Create order item
+                OrderItem.objects.create(
+                    order=order,
+                    food_item=food,
+                    quantity=quantity,
+                    price=food.rate,
+                    total_price=food.rate * quantity
+                )
 
         order.update_total()
         return Response(
@@ -809,10 +803,10 @@ def get_all_tables_and_seats(request):
         order_filter["category_id"] = category_id
     if time_slot_id:
         try:
-            slot = TblTimeSlot.objects.get(id=time_slot_id)
+            slot = TimeSlot.objects.get(id=time_slot_id)
             # Match time slot string (example: "10:00 AM - 12:00 PM")
             order_filter["time_slot_id"] = time_slot_id
-        except TblTimeSlot.DoesNotExist:
+        except TimeSlot.DoesNotExist:
             return Response({"error": "Invalid time_slot ID"}, status=status.HTTP_404_NOT_FOUND)
 
     # --- Step 3: Get booked seat IDs ---
@@ -868,25 +862,14 @@ def create_feedback(request):
         # Check if any food items in the order are today's special
         order_id = request.data.get('order')
         if order_id:
-            from adminapp.models import TodaysSpecial
             from datetime import date
             today = date.today()
             
             # Get the order
             order = Order.objects.get(id=order_id)
             
-            # Only restrict feedback for PREBOOKED orders with today's special
-            # Allow feedback for TABLE_ONLY orders with today's special (food added via QR)
-            if order.booking_type == 'PREBOOKED':
-                for order_item in order.items.all():
-                    if TodaysSpecial.objects.filter(
-                        name=order_item.food_item.name,
-                        category=order_item.food_item.category,
-                        date=today
-                    ).exists():
-                        return Response({
-                            "error": f"Cannot submit feedback for PREBOOKED order containing today's special items"
-                        }, status=status.HTTP_400_BAD_REQUEST)
+            # No restrictions - today's special items can be booked via all booking types
+            # Feedback allowed for all orders regardless of today's special items
         
         serializer.save()
         return Response({
@@ -965,7 +948,7 @@ def cancel_order(request):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Check 1-hour restriction
+    # Check 30-minute restriction
     from django.utils import timezone
     from datetime import timedelta
     
@@ -976,9 +959,9 @@ def cancel_order(request):
         current_time = timezone.now()
         
         time_difference = booking_datetime - current_time
-        if time_difference <= timedelta(hours=1):
+        if time_difference <= timedelta(minutes=30):
             return Response(
-                {"error": "Cancellation not allowed within 1 hour of booking time"},
+                {"error": "Cancellation not allowed within 30 minutes of booking time"},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -1069,10 +1052,13 @@ def get_todays_special(request):
         from datetime import date
         date_obj = date.today()
     
-    from adminapp.models import TodaysSpecial
-    specials = TodaysSpecial.objects.filter(date=date_obj)
+    from adminapp.models import MenuItem
+    specials = MenuItem.objects.filter(
+        is_todays_special=True, 
+        special_date=date_obj
+    )
     
-    #Convert to similar format as menu items
+    # Convert to similar format as menu items
     response_data = []
     for special in specials:
         response_data.append({
@@ -1084,13 +1070,71 @@ def get_todays_special(request):
             'category': special.category.id,
             'category_name': special.category.name,
             'is_todays_special': True,
-            'item_source': "Today's Special",  # Add this line
+            'item_source': "Today's Special",
             'booking_restrictions': {
-                'can_be_booked_by_users_prebooked': False,
+                'can_be_booked_by_users_prebooked': True,
                 'can_be_booked_by_users_table_only': True,
                 'can_be_booked_by_admin': True,
-                'message': 'Available through: 1) Admin outsider booking, 2) TABLE_ONLY booking'
+                'message': 'Available through all booking types'
             }
         })
     
     return Response(response_data)
+
+# -------------------------------
+# List all time slots
+# -------------------------------
+def time_slot_list(request):
+    # Custom order: Breakfast → Lunch → Evening Snacks → Dinner → others
+    order_priority = Case(
+        When(category__name='Breakfast', then=1),
+        When(category__name='Lunch', then=2),
+        When(category__name='Evening Snacks', then=3),
+        When(category__name='Dinner', then=4),
+        default=5,
+        output_field=IntegerField(),
+    )
+
+    slots = TblTimeSlot.objects.all().order_by(order_priority, 'start_time')
+    return render(request, 'adminapp/time_slot_list.html', {'slots': slots})
+
+
+# -------------------------------
+# Add time slots (manual or auto 30-min slots)
+# -------------------------------
+def add_time_slot(request):
+    categories = Category.objects.exclude(name="Dinner")  # Remove Dinner category
+
+    if request.method == 'POST':
+        category_id = request.POST.get('category')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+
+        category = Category.objects.get(id=category_id)
+
+        # Convert to datetime objects
+        start_time = datetime.strptime(start_time_str, "%H:%M")
+        end_time = datetime.strptime(end_time_str, "%H:%M")
+
+        # Remove existing slots for selected category (optional)
+        # TblTimeSlot.objects.filter(category=category).delete()
+
+        current_time = start_time
+        while current_time < end_time:
+            slot_start = current_time.time()
+            slot_end = (current_time + timedelta(minutes=30)).time()
+
+            if slot_end > end_time.time():
+                slot_end = end_time.time()
+
+            TblTimeSlot.objects.create(
+                category=category,
+                start_time=slot_start,
+                end_time=slot_end,
+            )
+            current_time += timedelta(minutes=30)
+
+        messages.success(request, "Time slots added successfully!")
+        return redirect('time_slot_list')
+
+    return render(request, 'adminapp/add_time_slot.html', {'categories': categories})

@@ -94,6 +94,11 @@
                             {% if item in menu.items.all %}checked{% endif %}
                         >
                         <label for="item{{ item.id }}" class="form-check-label">
+                            {% if item.image and item.image.name %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 3px; margin-right: 5px;">
+                            {% else %}
+                                <span style="display: inline-block; width: 30px; height: 30px; background-color: #e9ecef; border: 1px solid #dee2e6; border-radius: 3px; margin-right: 5px;"></span>
+                            {% endif %}
                             {{ item.name }}
                         </label>
                     </div>

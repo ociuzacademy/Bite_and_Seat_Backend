@@ -114,14 +114,18 @@ def add_menu_item(request):
         items_per_plate = request.POST.getlist('item_per_plate')
         categories_selected = request.POST.getlist('category')
         images = request.FILES.getlist('image')
+        is_todays_special = request.POST.getlist('is_todays_special')
+        special_dates = request.POST.getlist('special_date')
 
         for i in range(len(names)):
-            TblMenuItem.objects.create(
+            MenuItem.objects.create(
                 name=names[i],
                 rate=rates[i],
                 item_per_plate=items_per_plate[i],
                 category_id=categories_selected[i],
-                image=images[i] if i < len(images) else None
+                image=images[i] if i < len(images) else None,
+                is_todays_special=bool(is_todays_special[i]) if i < len(is_todays_special) else False,
+                special_date=special_dates[i] if i < len(special_dates) and special_dates[i] else None
             )
 
         return redirect('menu_list')
@@ -137,7 +141,7 @@ from django.shortcuts import render, redirect
 from .models import TblMenuItem, TblDailyMenu
 
 def add_daily_menu(request):
-    items = TblMenuItem.objects.all()  # get all menu items
+    items = MenuItem.objects.all()  # get all menu items
 
     if request.method == 'POST':
         date_str = request.POST.get('date')
@@ -157,7 +161,7 @@ def add_daily_menu(request):
             messages.error(request, "Please select at least one menu item.")
             return redirect('add_daily_menu')
 
-        daily_menu, created = TblDailyMenu.objects.get_or_create(date=date_obj)
+        daily_menu, created = DailyMenu.objects.get_or_create(date=date_obj)
         daily_menu.items.set(selected_items)  # assign correct items
         messages.success(request, f"Daily menu for {weekday} ({date_obj}) saved successfully!")
         return redirect('daily_menu_list')
@@ -173,8 +177,8 @@ def add_daily_menu(request):
 from django.shortcuts import get_object_or_404
 
 def edit_daily_menu(request, id):
-    daily_menu = get_object_or_404(TblDailyMenu, id=id)
-    items = TblMenuItem.objects.all()
+    daily_menu = get_object_or_404(DailyMenu, id=id)
+    items = MenuItem.objects.all()
 
     if request.method == 'POST':
         date_str = request.POST.get('date')
@@ -207,33 +211,25 @@ def edit_daily_menu(request, id):
 
 
 def delete_daily_menu(request, id):
-    daily_menu = get_object_or_404(TblDailyMenu, id=id)
+    daily_menu = get_object_or_404(DailyMenu, id=id)
     if request.method == 'POST':
         daily_menu.delete()
         messages.success(request, "Daily menu deleted successfully.")
         return redirect('daily_menu_list')
     
-
-
-
-
-
-
-
-
 def daily_menu_list(request):
-    menus = TblDailyMenu.objects.all().order_by('-date')
+    menus = DailyMenu.objects.all().order_by('-date')
     return render(request, 'adminapp/daily_menu_list.html', {'menus': menus})
 
 
 
 def menu_list(request):
-    items = TblMenuItem.objects.all()
+    items = MenuItem.objects.all().order_by('-is_todays_special', 'category__name', 'name')
     return render(request, 'adminapp/menu_list.html', {'items': items})
 
 
 def delete_menu_item(request, item_id):
-    item = get_object_or_404(TblMenuItem, id=item_id)
+    item = get_object_or_404(MenuItem, id=item_id)
     item.delete()
     return redirect('menu_list')
 
@@ -242,7 +238,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import MenuItem, Category
 
 def edit_menu_item(request, item_id):
-    item = get_object_or_404(TblMenuItem, id=item_id)
+    item = get_object_or_404(MenuItem, id=item_id)
     categories = Category.objects.all()
 
     if request.method == 'POST':
@@ -250,6 +246,10 @@ def edit_menu_item(request, item_id):
         item.rate = request.POST.get('rate')
         item.item_per_plate = request.POST.get('item_per_plate')
         item.category_id = request.POST.get('category')
+        item.is_todays_special = request.POST.get('is_todays_special') == 'on'
+        
+        special_date = request.POST.get('special_date')
+        item.special_date = special_date if special_date else None
 
         if request.FILES.get('image'):
             item.image = request.FILES['image']
@@ -284,18 +284,18 @@ def time_slot_list(request):
         When(category__name='Breakfast', then=1),
         When(category__name='Lunch', then=2),
         When(category__name='Evening Snacks', then=3),
-        When(category__name='Dinner', then=4),
         default=5,
         output_field=IntegerField(),
     )
 
-    slots = TblTimeSlot.objects.all().order_by(order_priority, 'start_time')
+    slots = TimeSlot.objects.all().order_by(order_priority, 'start_time')
     return render(request, 'adminapp/time_slot_list.html', {'slots': slots})
 
 
 # -------------------------------
 # Add time slots (manual or auto 30-min slots)
 # -------------------------------
+
 def add_time_slot(request):
     categories = Category.objects.exclude(name="Dinner")  # Remove Dinner category
 
@@ -311,7 +311,7 @@ def add_time_slot(request):
         end_time = datetime.strptime(end_time_str, "%H:%M")
 
         # Remove existing slots for selected category (optional)
-        # TblTimeSlot.objects.filter(category=category).delete()
+        TimeSlot.objects.filter(category=category).delete()
 
         current_time = start_time
         while current_time < end_time:
@@ -321,7 +321,7 @@ def add_time_slot(request):
             if slot_end > end_time.time():
                 slot_end = end_time.time()
 
-            TblTimeSlot.objects.create(
+            TimeSlot.objects.create(
                 category=category,
                 start_time=slot_start,
                 end_time=slot_end,
@@ -334,12 +334,11 @@ def add_time_slot(request):
     return render(request, 'adminapp/add_time_slot.html', {'categories': categories})
 
 
-
 # -------------------------------
 # Edit a time slot
 # -------------------------------
 def edit_time_slot(request, slot_id):
-    slot = get_object_or_404(TblTimeSlot, id=slot_id)
+    slot = get_object_or_404(TimeSlot, id=slot_id)
     categories = Category.objects.all()
 
     if request.method == 'POST':
@@ -355,11 +354,8 @@ def edit_time_slot(request, slot_id):
     return render(request, 'adminapp/edit_time_slot.html', {'slot': slot, 'categories': categories})
 
 
-# -------------------------------
-# Delete a time slot
-# -------------------------------
 def delete_time_slot(request, slot_id):
-    slot = get_object_or_404(TblTimeSlot, id=slot_id)
+    slot = get_object_or_404(TimeSlot, id=slot_id)
     slot.delete()
 
     messages.success(request, "Time slot deleted successfully!")
@@ -433,7 +429,10 @@ def admin_all_orders(request):
     orders = Order.objects.all().order_by('-date', '-id')
     return render(request, 'adminapp/admin_all_orders.html', {'orders': orders})
 
-
+def admin_cancelled_orders(request):
+    # Show only cancelled orders, latest first
+    orders = Order.objects.filter(booking_status='cancelled').order_by('-date', '-id')
+    return render(request, 'adminapp/admin_cancelled_orders.html', {'orders': orders})
 
 from django.shortcuts import render, get_object_or_404
 from userapp.models import Table
@@ -465,7 +464,7 @@ def admin_order_detail(request, order_id):
 
 from django.shortcuts import render, get_object_or_404, redirect
 from userapp.models import Order, OrderItem
-from adminapp.models import TblMenuItem, TblDailyMenu  # ✅ import these
+from .models import MenuItem, DailyMenu  # ✅ import these
 
 def admin_select_food(request, order_id):
     order = get_object_or_404(Order, id=order_id)
@@ -475,13 +474,13 @@ def admin_select_food(request, order_id):
         quantities = request.POST.getlist('quantities')
 
         for i, item_id in enumerate(selected_items):
-            food_item = TblMenuItem.objects.get(id=item_id)
+            food_item = MenuItem.objects.get(id=item_id)
             quantity = int(quantities[i])
             total_price = food_item.rate * quantity
 
             OrderItem.objects.create(
                 order=order,
-                food_item=food_item,  # use string field if OrderItem doesn’t FK TblMenuItem
+                food_item=food_item,
                 quantity=quantity,
                 price=food_item.rate,
                 total_price=total_price
@@ -493,14 +492,8 @@ def admin_select_food(request, order_id):
         return redirect('admin_order_detail', order_id=order.id)
 
     # show menu based on date
-    daily_menu = TblDailyMenu.objects.filter(date=order.date).first()
+    daily_menu = DailyMenu.objects.filter(date=order.date).first()
     food_items = daily_menu.items.all() if daily_menu else []
-
-    return render(request, 'adminapp/admin_select_food.html', {
-        'order': order,
-        'food_items': food_items
-    })
-
 
 
 
@@ -690,6 +683,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from decimal import Decimal
 from .models import *
+from adminapp.models import MenuItem
 from userapp.models import Table, Seat
 from adminapp.models import TblMenuItem, TblDailyMenu
 from django.utils import timezone
@@ -717,7 +711,11 @@ def admin_book_outsider(request):
     tables = Table.objects.all()
     available_seat_ids = []
     food_items = []
-    todays_specials = TodaysSpecial.objects.filter(date=today)
+    # Get today's special items from MenuItem model
+    todays_specials = MenuItem.objects.filter(
+        is_todays_special=True, 
+        special_date=today
+    )
     selected_slot = None
     selected_category = None
     today_date = today
@@ -742,7 +740,19 @@ def admin_book_outsider(request):
         elif 18 <= current_hour < 22:
             time_based_category = "Dinner"
         else:
-            time_based_category = "Dinner"  # Default
+            # Outside regular hours - check if any slots exist for today
+            # Find the nearest future slot for today
+            future_slots = TblTimeSlot.objects.filter(
+                start_time__gte=now
+            ).order_by('start_time').first()
+            
+            if future_slots:
+                selected_category = future_slots.category
+                selected_slot = future_slots
+                time_based_category = selected_category.name
+            else:
+                # No future slots today, use default category logic
+                time_based_category = "Dinner"  # Default
             
         try:
             selected_category = Category.objects.get(name=time_based_category)
@@ -1129,7 +1139,8 @@ def todays_special_page(request):
     else:
         selected_date = date.today()
     
-    specials = TodaysSpecial.objects.filter(date=selected_date)
+    # Order by category and name for better organization
+    specials = TodaysSpecial.objects.filter(date=selected_date).order_by('category__name', 'name')
     
     return render(request, 'adminapp/todays_special_list.html', {
         'specials': specials,
@@ -1141,6 +1152,7 @@ def add_todays_special_page(request):
     categories = Category.objects.all()
     
     if request.method == 'POST':
+        # Handle form submission (both buttons)
         name = request.POST.get('name')
         category_id = request.POST.get('category')
         rate = request.POST.get('rate')
@@ -1156,6 +1168,7 @@ def add_todays_special_page(request):
             from datetime import datetime
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
             
+            # Create in old table for backward compatibility
             TodaysSpecial.objects.create(
                 name=name,
                 category_id=category_id,
@@ -1165,9 +1178,34 @@ def add_todays_special_page(request):
                 image=image
             )
             
-            messages.success(request, f"Today's special '{name}' added successfully!")
-            return redirect('todays_special_page')
+            # Create/update in new MenuItem table
+            menu_item, created = MenuItem.objects.update_or_create(
+                name=name,
+                category_id=category_id,
+                defaults={
+                    'rate': rate,
+                    'item_per_plate': item_per_plate,
+                    'image': image,
+                    'is_todays_special': True,
+                    'special_date': date_obj
+                }
+            )
             
+            if created:
+                print(f"✅ Created new MenuItem: {name} (ID: {menu_item.id})")
+            else:
+                print(f"✅ Updated existing MenuItem: {name} (ID: {menu_item.id})")
+            
+            messages.success(request, f"Today's special '{name}' added successfully!")
+            
+            # Check which button was clicked
+            if 'add_another' in request.POST:
+                # Stay on the form to add another
+                return redirect('add_todays_special_page')
+            else:
+                # Redirect to list page
+                return redirect('todays_special_page')
+                
         except ValueError:
             messages.error(request, "Invalid date format. Use YYYY-MM-DD.")
     
@@ -1237,7 +1275,7 @@ def admin_add_food_to_order(request, order_id):
     now = timezone.localtime().time()
     
     # Find active time slot
-    selected_slot = TblTimeSlot.objects.filter(
+    selected_slot = TimeSlot.objects.filter(
         start_time__lte=now,
         end_time__gte=now
     ).first()
@@ -1248,21 +1286,24 @@ def admin_add_food_to_order(request, order_id):
     food_items = []
     if selected_category:
         try:
-            today_menu = TblDailyMenu.objects.get(date=today)
+            today_menu = DailyMenu.objects.get(date=today)
             food_items = today_menu.items.filter(category=selected_category)
-        except TblDailyMenu.DoesNotExist:
-            food_items = TblMenuItem.objects.filter(category=selected_category)
+        except DailyMenu.DoesNotExist:
+            food_items = MenuItem.objects.filter(category=selected_category)
     else:
         # If no active time slot, show all food items for today
         try:
-            today_menu = TblDailyMenu.objects.get(date=today)
+            today_menu = DailyMenu.objects.get(date=today)
             food_items = today_menu.items.all()
-        except TblDailyMenu.DoesNotExist:
+        except DailyMenu.DoesNotExist:
             # If no daily menu, show all menu items
-            food_items = TblMenuItem.objects.all()
+            food_items = MenuItem.objects.all()
     
     # Load today's special items
-    todays_specials = TodaysSpecial.objects.filter(date=today)
+    todays_specials = MenuItem.objects.filter(
+        is_todays_special=True, 
+        special_date=today
+    )
     
     if request.method == 'POST':
         # Add food items to the order
@@ -1342,3 +1383,12 @@ def admin_add_food_to_order(request, order_id):
     }
     
     return render(request, 'adminapp/admin_add_food_to_order.html', context)
+
+# Custom 404 error handler
+def custom_404_view(request, exception):
+    print("="*50)
+    print("CUSTOM 404 VIEW CALLED")
+    print(f"Request path: {request.path}")
+    print(f"Exception: {exception}")
+    print("="*50)
+    return render(request, '404.html', status=404)

@@ -33,6 +33,7 @@ urlpatterns = [
    path('delete-daily-menu/<int:id>/', views.delete_daily_menu, name='delete_daily_menu'),
    path('orders/', views.admin_all_orders, name='admin_all_orders'),
    path('orders/<int:order_id>/', views.admin_order_detail, name='admin_order_detail'),
+   path('cancelled-orders/', views.admin_cancelled_orders, name='admin_cancelled_orders'),
    path('reports/', views.reports_list, name='admin_view_all_reports'),
    path('feedbacks/', views.admin_view_all_feedbacks, name='admin_view_all_feedbacks'),
    path('view_scanner_data/',views.view_scanner_data,name='view_scanner_data'),

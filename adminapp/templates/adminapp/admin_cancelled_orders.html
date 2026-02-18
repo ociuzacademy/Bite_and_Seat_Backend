@@ -1,0 +1,249 @@
+{% extends 'adminapp/dashboard.html' %}
+
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #087272;
+    --primary-light: #e0f4f3;
+    --primary-dark: #065c5c;
+    --danger-color: #dc3545;
+    --danger-light: #f8d7da;
+  }
+
+  body {
+    background: var(--primary-light);
+  }
+
+  .page-container {
+    background: var(--primary-light);
+    min-height: 100vh;
+    padding: 50px 0;
+  }
+
+  .orders-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    transition: 0.3s ease;
+  }
+
+  .orders-card:hover {
+    transform: scale(1.01);
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .page-header h3 {
+    color: var(--primary-color);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+
+  .badge-count {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-color);
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 50px;
+  }
+
+  .badge-cancelled {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  table thead {
+    background-color: var(--primary-color);
+    color: #fff;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+
+  table tbody tr:hover {
+    background-color: rgba(8, 114, 114, 0.05);
+  }
+
+  table tbody tr.cancelled-row {
+    background-color: var(--danger-light);
+  }
+
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transition: all 0.3s ease;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(8, 114, 114, 0.3);
+  }
+
+  th, td {
+    vertical-align: middle !important;
+  }
+
+  .table thead th {
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .table td strong {
+    color: var(--primary-dark);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state i {
+    font-size: 60px;
+    color: var(--primary-light);
+    margin-bottom: 20px;
+  }
+
+  .filter-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+  }
+</style>
+
+<div class="page-container d-flex justify-content-center">
+  <div class="orders-card w-100" style="max-width: 1100px;">
+
+    <!-- Header -->
+    <div class="page-header">
+      <h3><i class="fas fa-ban me-2" style="color: var(--danger-color);"></i>Cancelled Orders</h3>
+      <span class="badge-count">
+        Total Cancelled: {{ orders|length }}
+      </span>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="filter-section">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-calendar-alt me-2 text-muted"></i>
+            <span>Last 7 days: 
+              <strong>{{ orders|length }}</strong>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-users me-2 text-muted"></i>
+            <span>Total seats freed: 
+              <strong>{{ total_seats_freed|default:"0" }}</strong>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-6 text-end">
+          <a href="{% url 'admin_all_orders' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i> View All Orders
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-responsive">
+      <table class="table align-middle text-center shadow-sm">
+        <thead>
+          <tr>
+            <th>Sl No</th>
+            <th>Order ID</th>
+            <th>User</th>
+            <th>Booking Type</th>
+            <th>Date</th>
+            <th>Time Slot</th>
+            <th>Total (₹)</th>
+            <th>Cancelled On</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr class="cancelled-row">
+            <td><strong>{{ forloop.counter }}</strong></td>
+            <td>#{{ order.id }}</td>
+            <td>
+              {% if order.user %}
+                {{ order.user.username }}
+              {% else %}
+                {{ order.outsider_name }} <span class="text-muted">(Outsider)</span>
+              {% endif %}
+              <br>
+              <small class="text-muted">{{ order.user.email|default:"" }}</small>
+            </td>
+            <td>
+              <span class="badge-cancelled">
+                {% if order.booking_type == 'TABLE_ONLY' %}
+                  Table Only
+                {% elif order.booking_type == 'PREBOOKED' %}
+                  Prebooked
+                {% elif order.booking_type == 'ONSPOT' %}
+                  On Spot
+                {% else %}
+                  {{ order.booking_type }}
+                {% endif %}
+              </span>
+            </td>
+            <td>{{ order.date|date:"M d, Y" }}</td>
+            <td>
+              {% if order.time_slot %}
+                {{ order.time_slot.start_time|time:"H:i" }} - {{ order.time_slot.end_time|time:"H:i" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
+            <td>
+              <small>{{ order.updated_at|default:order.created_at|date:"M d, Y H:i" }}</small>
+            </td>
+            <td>
+              <a href="{% url 'admin_order_detail' order.id %}" 
+                 class="btn btn-sm btn-outline-primary fw-semibold"
+                 title="View cancelled order details">
+                 <i class="fas fa-eye me-1"></i> View
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="empty-state">
+              <i class="fas fa-check-circle mb-3" style="font-size: 48px; color: #28a745;"></i>
+              <h5>No Cancelled Orders</h5>
+              <p class="text-muted">There are no cancelled orders at the moment.</p>
+              <a href="{% url 'admin_all_orders' %}" class="btn btn-outline-primary mt-3">
+                View All Orders
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

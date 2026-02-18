@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Bite and Seat</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
@@ -109,7 +109,8 @@
 
         /* Custom Card Styles */
         .card {
-            width: 350px;
+            width: 100%;
+            max-width: 350px;
             height: 150px;
             background: rgb(226, 237, 250);
             display: flex;
@@ -123,7 +124,7 @@
             position: relative;
             transition: all 0.7s ease-in-out;
             overflow: hidden;
-            margin: 10px;
+            margin: 10px auto;
         }
 
         .card::before {
@@ -154,7 +155,7 @@
         }
 
         /* Responsive Styles */
-        @media (max-width: 768px) {
+            @media (max-width: 768px) {
             #sidebar {
                 margin-left: -250px;
             }
@@ -169,6 +170,24 @@
 
             #content.active {
                 width: calc(100% - 250px);
+            }
+            
+            .card {
+                max-width: 300px;
+                height: 130px;
+                font-size: 1.2em;
+                margin: 8px auto;
+            }
+            
+            .row {
+                margin: 0 auto;
+                width: 100%;
+            }
+            
+            .col-md-4 {
+                padding: 5px;
+                display: flex;
+                justify-content: center;
             }
         }
 
@@ -456,6 +475,16 @@
                 </li>
                 
                 <li>
+                    <a href="#ordersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-shopping-cart"></i> Orders
+                    </a>
+                    <ul class="collapse list-unstyled" id="ordersSubmenu">
+                        <li><a href="{% url 'admin_all_orders' %}"><i class="fas fa-list"></i> All Orders</a></li>
+                        <li><a href="{% url 'admin_cancelled_orders' %}"><i class="fas fa-ban" style="color: #ff6b6b;"></i> Cancelled Orders</a></li>
+                    </ul>
+                </li>
+                
+                <li>
                     <a href="#todaysSpecialSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                         <i class="fas fa-star"></i> Today's Special
                     </a>
@@ -464,6 +493,7 @@
                         <li><a href="/adminapp/add-todays-special-page/"><i class="fas fa-plus-circle"></i> Add Today's Special</a></li>
                     </ul>
                 </li>
+                
                 <li>
                     <!-- <a href=""><i class="fas fa-sign-out-alt"></i> Logout</a> -->
                 </li>
@@ -512,13 +542,29 @@
             {% block content %}
             <!-- Main Content -->
             <div class="container-fluid" style="color: white;">
-                <h2>Welcome to Admin Dashboard</h2>
-                <div class="row">
+                <h2 class="text-center mb-4">Welcome to Admin Dashboard</h2>
+                <div class="row justify-content-center g-3">
                     
-                    <div class="col-md-4">
+                    <div class="col-md-6 col-lg-4">
                         <a href="{% url 'admin_view_users' %}" style="text-decoration: none;">
                             <div class="card">
                                 <p class="c-txt">View Users</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{% url 'admin_all_orders' %}" style="text-decoration: none;">
+                            <div class="card">
+                                <p class="c-txt">All Orders</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{% url 'admin_cancelled_orders' %}" style="text-decoration: none;">
+                            <div class="card">
+                                <p class="c-txt">Cancelled Orders</p>
                             </div>
                         </a>
                     </div>
@@ -526,10 +572,11 @@
                     <div class="col-md-4">
                         <a href="{% url 'admin_all_orders' %}" style="text-decoration: none;">
                             <div class="card">
-                                <p class="c-txt">View Orders</p>
+                                <p class="c-txt">All Orders</p>
                             </div>
                         </a>
                     </div>
+
                     <div class="col-md-4">
                         <a href="{% url 'admin_view_all_reports' %}" style="text-decoration: none;">
                             <div class="card">

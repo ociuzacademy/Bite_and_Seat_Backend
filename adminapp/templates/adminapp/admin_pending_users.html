@@ -1,8 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Pending Users Approval</title>
-    <style>
+{% extends 'adminapp/dashboard.html' %}
+
+{% block content %}
+<style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -91,8 +90,6 @@
     <div class="container">
         <h2>Pending User Registrations</h2>
         
-        <a href="{% url 'admin_dashboard' %}" class="btn btn-back">← Back to Dashboard</a>
-        
         {% if messages %}
             {% for message in messages %}
                 <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
@@ -174,5 +171,4 @@
             window.location.reload();
         }, 30000);
     </script>
-</body>
-</html>
+{% endblock %}
