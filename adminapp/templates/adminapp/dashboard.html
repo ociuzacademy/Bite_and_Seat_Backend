@@ -109,7 +109,8 @@
 
         /* Custom Card Styles */
         .card {
-            width: 350px;
+            width: 100%;
+            max-width: 350px;
             height: 150px;
             background: rgb(226, 237, 250);
             display: flex;
@@ -123,7 +124,7 @@
             position: relative;
             transition: all 0.7s ease-in-out;
             overflow: hidden;
-            margin: 10px;
+            margin: 10px auto;
         }
 
         .card::before {
@@ -154,7 +155,7 @@
         }
 
         /* Responsive Styles */
-        @media (max-width: 768px) {
+            @media (max-width: 768px) {
             #sidebar {
                 margin-left: -250px;
             }
@@ -169,6 +170,24 @@
 
             #content.active {
                 width: calc(100% - 250px);
+            }
+            
+            .card {
+                max-width: 300px;
+                height: 130px;
+                font-size: 1.2em;
+                margin: 8px auto;
+            }
+            
+            .row {
+                margin: 0 auto;
+                width: 100%;
+            }
+            
+            .col-md-4 {
+                padding: 5px;
+                display: flex;
+                justify-content: center;
             }
         }
 
@@ -523,10 +542,10 @@
             {% block content %}
             <!-- Main Content -->
             <div class="container-fluid" style="color: white;">
-                <h2>Welcome to Admin Dashboard</h2>
-                <div class="row">
+                <h2 class="text-center mb-4">Welcome to Admin Dashboard</h2>
+                <div class="row justify-content-center g-3">
                     
-                    <div class="col-md-4">
+                    <div class="col-md-6 col-lg-4">
                         <a href="{% url 'admin_view_users' %}" style="text-decoration: none;">
                             <div class="card">
                                 <p class="c-txt">View Users</p>
