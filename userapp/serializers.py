@@ -129,15 +129,18 @@ class DailyMenuSerializer(serializers.ModelSerializer):
     todays_specials = serializers.SerializerMethodField()
 
     class Meta:
-        model = TblDailyMenu
+        model = DailyMenu  # Changed from TblDailyMenu to DailyMenu
         fields = ['id', 'date', 'items', 'todays_specials']
     
     def get_todays_specials(self, obj):
-        from adminapp.models import TodaysSpecial
+        from adminapp.models import MenuItem
         from datetime import date
         
         today = obj.date if obj.date else date.today()
-        specials = TodaysSpecial.objects.filter(date=today)
+        specials = MenuItem.objects.filter(
+            is_todays_special=True, 
+            special_date=today
+        )
         
         specials_list = []
         for special in specials:

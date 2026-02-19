@@ -310,6 +310,10 @@ from .models import TblDailyMenu
 from .serializers import DailyMenuSerializer
 
 
+from .models import DailyMenu
+
+
+
 @api_view(['GET'])
 def daily_menus_api(request):
     date_str = request.GET.get('date')
