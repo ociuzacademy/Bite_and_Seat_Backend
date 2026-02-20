@@ -489,8 +489,8 @@ def update_step2(request, order_id):
         return Response({"error": "slot_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        slot = TblTimeSlot.objects.get(id=slot_id)
-    except TblTimeSlot.DoesNotExist:
+        slot = TimeSlot.objects.get(id=slot_id)
+    except TimeSlot.DoesNotExist:
         return Response({"error": "Invalid slot_id"}, status=status.HTTP_404_NOT_FOUND)
 
     # ✅ FIXED: assign FK instance
@@ -963,11 +963,20 @@ def cancel_order(request):
         current_time = timezone.now()
         
         time_difference = booking_datetime - current_time
+        print(f"Booking datetime: {booking_datetime}")
+        print(f"Current time: {current_time}")
+        print(f"Time difference: {time_difference}")
+        print(f"Total seconds: {time_difference.total_seconds()}")
+        print(f"Minutes: {time_difference.total_seconds() / 60}")
+        
         if time_difference <= timedelta(minutes=30):
+            print(f"❌ Cancellation blocked - within 30 minutes")
             return Response(
                 {"error": "Cancellation not allowed within 30 minutes of booking time"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        else:
+            print(f"✅ Cancellation allowed - more than 30 minutes away")
     
     # Cancel all seats in the order
     seats_cancelled = 0
