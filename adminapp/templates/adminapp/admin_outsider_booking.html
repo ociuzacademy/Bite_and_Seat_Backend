@@ -110,6 +110,7 @@
 
         {% if selected_slot %}
         <div class="alert alert-info shadow-sm mt-3">
+            <strong>Date:</strong> {{ today|date:"l, F j, Y" }} <br>
             <strong>Current Slot:</strong> {{ selected_slot.start_time }} - {{ selected_slot.end_time }} <br>
             <strong>Category:</strong> {{ selected_category.name }} <br>
             <strong>Today's Special Available:</strong> {{ todays_specials.count }} item(s)
@@ -117,6 +118,7 @@
         {% else %}
         <div class="alert alert-warning shadow-sm mt-3">
             <strong>Outsider (Walk-in) Booking</strong><br>
+            <strong>Date:</strong> {{ today|date:"l, F j, Y" }} <br>
             <strong>Current Time:</strong> {{ now|time:"H:i" }} <br>
             <strong>Category:</strong> {{ selected_category.name }} (based on time)<br>
             <strong>Available Seats:</strong> {{ available_seat_ids|length }} seat(s) <br>
