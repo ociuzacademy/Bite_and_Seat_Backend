@@ -558,6 +558,9 @@ def scan_qr_complete_order(request):
     """
     Scan QR code to mark order as completed and update payment status
     """
+    print(f"🔍 Request method: {request.method}")
+    print(f"🔍 POST data: {request.POST}")
+
     order = None
     order_details = None
     
@@ -587,6 +590,73 @@ def scan_qr_complete_order(request):
                 
                 if order_id:
                     order = Order.objects.get(id=int(order_id))
+                    
+                    # Check if current time is within the time slot
+                    from django.utils import timezone
+                    now = timezone.localtime()
+                    current_time = now.time()
+                    current_date = now.date()
+                    
+                    # Get order date and time slot
+                    order_date = order.date
+                    time_slot = order.time_slot
+                    
+                    # Validate date
+                    if order_date != current_date:
+                        messages.error(request, f"This booking is for {order_date}, not today. Cannot check in.")
+                        order_details = {
+                            'id': order.id,
+                            'booking_type': order.get_booking_type_display(),
+                            'user': order.user.username if order.user else order.outsider_name,
+                            'date': order.date,
+                            'total_amount': order.total_amount,
+                            'table_payment_mode': order.table_payment_mode,
+                            'food_payment_mode': order.food_payment_mode,
+                            'table_payment_status': order.table_payment_status,
+                            'food_payment_status': order.food_payment_status,
+                            'is_completed': order.is_completed,
+                        }
+                        return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                    
+                    # Validate time slot
+                    if time_slot:
+                        slot_start = time_slot.start_time
+                        slot_end = time_slot.end_time
+                        
+                        if current_time < slot_start:
+                            messages.error(request, f"Too early! This booking starts at {slot_start}. Please wait until then.")
+                            order_details = {
+                                'id': order.id,
+                                'booking_type': order.get_booking_type_display(),
+                                'user': order.user.username if order.user else order.outsider_name,
+                                'date': order.date,
+                                'total_amount': order.total_amount,
+                                'table_payment_mode': order.table_payment_mode,
+                                'food_payment_mode': order.food_payment_mode,
+                                'table_payment_status': order.table_payment_status,
+                                'food_payment_status': order.food_payment_status,
+                                'is_completed': order.is_completed,
+                            }
+                            return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                        
+                        if current_time > slot_end:
+                            print("🚫 TOO LATE - SHOULD BLOCK AND RETURN")
+                            messages.error(request, f"Too late! This time slot ({slot_start} - {slot_end}) has ended.")
+                            order_details = {
+                                'id': order.id,
+                                'booking_type': order.get_booking_type_display(),
+                                'user': order.user.username if order.user else order.outsider_name,
+                                'date': order.date,
+                                'total_amount': order.total_amount,
+                                'table_payment_mode': order.table_payment_mode,
+                                'food_payment_mode': order.food_payment_mode,
+                                'table_payment_status': order.table_payment_status,
+                                'food_payment_status': order.food_payment_status,
+                                'is_completed': order.is_completed,
+                            }
+                            return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                    else:
+                        messages.warning(request, "This order has no time slot assigned. Check-in allowed.")
                     
                     # a. Update is_completed: false -> True
                     order.is_completed = True
@@ -636,6 +706,83 @@ def scan_qr_complete_order(request):
             
             try:
                 order = Order.objects.get(id=order_id)
+                
+                # Check if current time is within the time slot
+                from django.utils import timezone
+                now = timezone.localtime()
+                current_time = now.time()
+                current_date = now.date()
+                
+                # Get order date and time slot
+                order_date = order.date
+                time_slot = order.time_slot
+                
+                # Validate date
+                if order_date != current_date:
+                    messages.error(request, f"This booking is for {order_date}, not today. Cannot check in.")
+                    order_details = {
+                        'id': order.id,
+                        'booking_type': order.get_booking_type_display(),
+                        'user': order.user.username if order.user else order.outsider_name,
+                        'date': order.date,
+                        'total_amount': order.total_amount,
+                        'table_payment_mode': order.table_payment_mode,
+                        'food_payment_mode': order.food_payment_mode,
+                        'table_payment_status': order.table_payment_status,
+                        'food_payment_status': order.food_payment_status,
+                        'is_completed': order.is_completed,
+                    }
+                    return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                
+                # Validate time slot
+                if time_slot:
+                    slot_start = time_slot.start_time
+                    slot_end = time_slot.end_time
+                    
+                    # DEBUG PRINTS
+                    print("="*50)
+                    print("TIME VALIDATION DEBUG")
+                    print(f"Current time: {current_time}")
+                    print(f"Slot start: {slot_start}")
+                    print(f"Slot end: {slot_end}")
+                    print(f"Current time < slot_start? {current_time < slot_start}")
+                    print(f"Current time > slot_end? {current_time > slot_end}")
+                    print("="*50)
+                    
+                    if current_time < slot_start:
+                        messages.error(request, f"Too early! This booking starts at {slot_start}. Please wait until then.")
+                        order_details = {
+                            'id': order.id,
+                            'booking_type': order.get_booking_type_display(),
+                            'user': order.user.username if order.user else order.outsider_name,
+                            'date': order.date,
+                            'total_amount': order.total_amount,
+                            'table_payment_mode': order.table_payment_mode,
+                            'food_payment_mode': order.food_payment_mode,
+                            'table_payment_status': order.table_payment_status,
+                            'food_payment_status': order.food_payment_status,
+                            'is_completed': order.is_completed,
+                        }
+                        return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                    
+                    if current_time > slot_end:
+                        print("🚫 TOO LATE - SHOULD BLOCK AND RETURN")
+                        messages.error(request, f"Too late! This time slot ({slot_start} - {slot_end}) has ended.")
+                        order_details = {
+                            'id': order.id,
+                            'booking_type': order.get_booking_type_display(),
+                            'user': order.user.username if order.user else order.outsider_name,
+                            'date': order.date,
+                            'total_amount': order.total_amount,
+                            'table_payment_mode': order.table_payment_mode,
+                            'food_payment_mode': order.food_payment_mode,
+                            'table_payment_status': order.table_payment_status,
+                            'food_payment_status': order.food_payment_status,
+                            'is_completed': order.is_completed,
+                        }
+                        return render(request, 'adminapp/scanner.html', {'order': order, 'order_details': order_details})
+                else:
+                    messages.warning(request, "This order has no time slot assigned. Check-in allowed.")
                 
                 # a. Update is_completed: false -> True
                 order.is_completed = True

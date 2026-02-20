@@ -370,13 +370,24 @@
     <div class="order-details-card">
         <div class="order-details-content">
             <div class="text-center mb-4">
-                <div class="success-icon">
-                    ✓
-                </div>
-                <h3 class="success-heading">Order Completed Successfully</h3>
-                <p>QR Scan Successful</p>
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.tags == 'error' %}
+                            <div class="status-badge status-pending" style="font-size: 24px; padding: 10px 20px; margin-bottom: 15px;">
+                                ⚠️
+                            </div>
+                            <h3 class="success-heading" style="color: #dc3545;">Check-in Failed</h3>
+                            <p class="text-danger">{{ message }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="success-icon">
+                        ✓
+                    </div>
+                    <h3 class="success-heading">Order Completed Successfully</h3>
+                    <p>QR Scan Successful</p>
+                {% endif %}
             </div>
-
             <div class="details-grid">
                 <div class="detail-item">
                     <p><strong>Order ID:</strong> #{{ order_details.id }}</p>
