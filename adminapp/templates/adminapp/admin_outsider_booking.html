@@ -5,9 +5,9 @@
 <style>
 /* ---- GLOBAL STYLE ---- */
 :root {
-    --primary: #088080;
-    --primary-light: #e8f7f6;
-    --primary-dark: #066666;
+    --primary: #00477d;
+    --primary-light: #e6f0fa;
+    --primary-dark: #003366;
 }
 
 .page-wrapper {
@@ -62,7 +62,7 @@
 .seat-container.selected {
     background: var(--primary);
     color: white;
-    box-shadow: 0 4px 16px rgba(8,128,128,0.3);
+    box-shadow: 0 4px 16px rgba(0,71,125,0.3);
 }
 
 .seat-checkbox {
@@ -81,8 +81,8 @@
 /* ---- BUTTON ---- */
 .btn-confirm {
     background: white;
-    color: #088080;
-    border: 2px solid #088080;
+    color: var(--primary);
+    border: 2px solid var(--primary);
     padding: 14px;
     width: 100%;
     border-radius: 12px;
@@ -92,10 +92,11 @@
 }
 
 .btn-confirm:hover {
-    background: #088080 !important;
+    background: var(--primary) !important;
     color: white !important;
-    border-color: #088080 !important;
+    border-color: var(--primary) !important;
 }
+
 </style>
 
 <div class="page-wrapper">
