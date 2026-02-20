@@ -152,58 +152,69 @@
 
             <hr>
 
-            <!-- SEAT SECTION -->
-            <h4 class="section-title">Select Seats  
-                <small class="text-muted">(<span id="selectedCount">0</span> Selected)</small>
-            </h4>
+            <!-- SEAT SECTION with Accordion -->
+            <div class="accordion" id="seatsAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingSeats">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeats" aria-expanded="false" aria-controls="collapseSeats">
+                            <h4 class="section-title mb-0">Select Seats  
+                                <small class="text-muted">(<span id="selectedCount">0</span> Selected)</small>
+                            </h4>
+                        </button>
+                    </h2>
+                    <div id="collapseSeats" class="accordion-collapse collapse" aria-labelledby="headingSeats" data-bs-parent="#seatsAccordion">
+                        <div class="accordion-body">
+                            {% if available_seat_ids %}
+                                {% for table in tables %}
+                                    <div class="mb-3 p-3" style="background:#fafafa;border-radius:12px;">
+                                        <h5 class="mb-2">{{ table.table_name }} ({{ table.number_of_seats }} seats)</h5>
 
-            {% if available_seat_ids %}
-                {% for table in tables %}
-                    <div class="mb-3 p-3" style="background:#fafafa;border-radius:12px;">
-                        <h5 class="mb-2">{{ table.table_name }} ({{ table.number_of_seats }} seats)</h5>
+                                        <div class="seat-grid">
+                                        {% for seat in table.seats.all %}
+                                            <label class="seat-container 
+                                                {% if seat.id not in available_seat_ids %}disabled{% endif %}"
+                                                id="label_{{ seat.id }}" 
+                                                for="seat_{{ seat.id }}">
 
-                        <div class="seat-grid">
-                        {% for seat in table.seats.all %}
-                            <label class="seat-container 
-                                {% if seat.id not in available_seat_ids %}disabled{% endif %}"
-                                id="label_{{ seat.id }}" 
-                                for="seat_{{ seat.id }}">
+                                                Seat {{ seat.seat_number }} <br>
+                                                <small>₹{{ seat.seat_price }}</small>
+                                            </label>
 
-                                Seat {{ seat.seat_number }} <br>
-                                <small>₹{{ seat.seat_price }}</small>
-                            </label>
+                                            <input type="checkbox" 
+                                                class="seat-checkbox" 
+                                                value="{{ seat.id }}" 
+                                                id="seat_{{ seat.id }}" 
+                                                name="seat_ids"
+                                                {% if seat.id not in available_seat_ids %}disabled{% endif %}>
+                                        {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-circle"></i> 
 
-                            <input type="checkbox" 
-                                class="seat-checkbox" 
-                                value="{{ seat.id }}" 
-                                id="seat_{{ seat.id }}" 
-                                name="seat_ids"
-                                {% if seat.id not in available_seat_ids %}disabled{% endif %}>
-                        {% endfor %}
+                                    {% if selected_category %}
+                                        No seats available for {{ selected_category.name }}.
+                                    {% else %}
+                                        No seats available for current time.
+                                    {% endif %}
+                                    
+                                    {% if todays_specials.exists %}
+                                    <br><small>
+                                        {% if available_seat_ids %}
+                                            Today's special items require seat selection.
+                                        {% else %}
+                                            Today's special items require available seats.
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-circle"></i> 
-
-                    {% if selected_category %}
-                        No seats available for {{ selected_category.name }}.
-                    {% else %}
-                        No seats available for current time.
-                    {% endif %}
-                    
-                    {% if todays_specials.exists %}
-                    <br><small>
-                        {% if available_seat_ids %}
-                            Today's special items require seat selection.
-                        {% else %}
-                            Today's special items require available seats.
-                        {% endif %}
-                    </small>
-                    {% endif %}
                 </div>
-            {% endif %}
+            </div>
 
             <hr>
 
