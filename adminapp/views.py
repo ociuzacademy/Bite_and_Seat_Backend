@@ -720,8 +720,8 @@ def admin_book_outsider(request):
     selected_category = None
     today_date = today
     
-    # GET ACTIVE TIMESLOT (if any)
-    selected_slot = TblTimeSlot.objects.filter(
+    # GET ACTIVE TIMESLOT (if any) - using unified TimeSlot model
+    selected_slot = TimeSlot.objects.filter(
         start_time__lte=now,
         end_time__gte=now
     ).first()
@@ -742,7 +742,7 @@ def admin_book_outsider(request):
         else:
             # Outside regular hours - check if any slots exist for today
             # Find the nearest future slot for today
-            future_slots = TblTimeSlot.objects.filter(
+            future_slots = TimeSlot.objects.filter(
                 start_time__gte=now
             ).order_by('start_time').first()
             
@@ -763,20 +763,20 @@ def admin_book_outsider(request):
     # For outsider booking, show items based on selected_category
     if selected_category:
         try:
-            today_menu = TblDailyMenu.objects.get(date=today)
+            today_menu = DailyMenu.objects.get(date=today)
             food_items = today_menu.items.filter(category=selected_category)
-        except TblDailyMenu.DoesNotExist:
-            food_items = TblMenuItem.objects.filter(category=selected_category)
+        except DailyMenu.DoesNotExist:
+            food_items = MenuItem.objects.filter(category=selected_category)
     else:
         # Fallback: show first 10 menu items
-        food_items = TblMenuItem.objects.all()[:10]
+        food_items = MenuItem.objects.all()[:10]
     
     # FIND BOOKED SEATS (for outsider booking - independent of selected_slot)
     # Get seats booked in time slots that are currently active or overlapping
     from datetime import datetime, time
     
     # Find all time slots that overlap with current time
-    overlapping_slots = TblTimeSlot.objects.filter(
+    overlapping_slots = TimeSlot.objects.filter(
         start_time__lte=now,
         end_time__gte=now
     )
