@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from adminapp.models import MenuItem  # This should be the correct import
+from adminapp.models import MenuItem  
 
 
 # class tbl_registerSerializer(serializers.ModelSerializer):
@@ -486,6 +486,8 @@ class TablesSerializer(serializers.ModelSerializer):
 #         fields = ['id', 'user', 'order', 'rating', 'feedback', 'image', 'created_at']
 
 class FeedbackItemSerializer(serializers.ModelSerializer):
+    food_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all())
+
     class Meta:
         model = FeedbackItem
         fields = ['food_item', 'rating']

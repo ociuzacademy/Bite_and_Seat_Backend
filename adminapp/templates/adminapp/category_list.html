@@ -15,7 +15,7 @@
 
     .category-card h2 {
         font-weight: 700;
-        color: #1e3a8a;
+        color: #00477d;
         margin-bottom: 25px;
     }
 
@@ -57,11 +57,12 @@
     }
 
     .actions a.edit {
-        color: #22c55e;
+        color: #00477d;
     }
 
     .actions a.edit:hover {
-        color: #15803d;
+        color: #003366;
+        text-decoration: underline;
     }
 
     .actions a.delete {
@@ -73,7 +74,7 @@
     }
 
     .add-btn {
-        background-color: #088080;
+        background-color: #00477d;
         color: #fff;
         padding: 10px 20px;
         border-radius: 8px;
@@ -82,16 +83,18 @@
         margin-top: 25px;
         text-decoration: none;
         transition: all 0.3s ease;
+        border: none;
     }
 
     .add-btn:hover {
-        background-color: #088080;
+        background-color: #003366;
         transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 71, 125, 0.2);
     }
 </style>
 
 <div class="category-card">
-    <h2 class="mb-4 fw-bold" style="color: #088080;">Category List</h2>
+    <h2 class="mb-4 fw-bold" style="color: #00477d;">Category List</h2>
 
     <ul class="category-list">
         {% for category in categories %}

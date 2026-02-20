@@ -9,8 +9,8 @@
 
       <!-- Page Header -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 fw-bold" style="color: #088080;">All Tables</h2>
-        <a href="{% url 'add_table' %}" class="btn fw-bold px-4 text-white" style="background-color: #088080;">
+        <h2 class="mb-0 fw-bold" style="color: #00477d;">All Tables</h2>
+        <a href="{% url 'add_table' %}" class="btn fw-bold px-4 text-white" style="background-color: #00477d;">
           + Add New Table
         </a>
       </div>
@@ -26,7 +26,7 @@
       <!-- Tables Section -->
       <div class="table-responsive">
         <table class="table table-hover align-middle text-center mb-0 border">
-          <thead style="background-color: #088080; color: white;">
+          <thead style="background-color: #00477d; color: white;">
             <tr>
               <th>ID</th>
               <th>Name</th>
@@ -45,12 +45,12 @@
                 <td>
                   <a href="{% url 'view_seats' table.id %}" 
                      class="btn btn-sm text-white fw-bold px-3" 
-                     style="background-color: #088080;">
+                     style="background-color: #00477d;">
                     View Seats
                   </a>
                   <a href="{% url 'edit_table' table.id %}" 
                      class="btn btn-sm fw-bold text-white px-3" 
-                     style="background-color: #0a9a9a;">
+                     style="background-color: #005a9e;">
                     Edit
                   </a>
                   <a href="{% url 'delete_table' table.id %}" 
@@ -80,7 +80,7 @@
   }
 
   .table-hover tbody tr:hover {
-    background-color: rgba(8, 128, 128, 0.05);
+    background-color: rgba(0, 71, 125, 0.05);
   }
 
   .btn:hover {

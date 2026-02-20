@@ -1,7 +1,7 @@
 {% extends 'adminapp/dashboard.html' %}
 {% block content %}
 <div class="form-container">
-    <h2 class="mb-4 fw-bold" style="color: #088080;">Add Time Slot</h2>
+    <h2 class="mb-4 fw-bold" style="color: #00477d;">Add Time Slot</h2>
     <form method="POST">
         {% csrf_token %}
         <div class="form-group">
@@ -71,8 +71,8 @@
 
 .form-group input:focus,
 .form-group select:focus {
-    border-color: #088080;
-    box-shadow: 0 0 5px rgba(52,152,219,0.3);
+    border-color: #00477d;
+    box-shadow: 0 0 5px rgba(0,71,125,0.3);
     outline: none;
 }
 
@@ -80,7 +80,7 @@
 .btn-submit {
     width: 100%;
     padding: 12px 20px;
-    background-color: #088080;
+    background-color: #00477d;
     color: white;
     font-size: 16px;
     font-weight: bold;
@@ -91,7 +91,7 @@
 }
 
 .btn-submit:hover {
-    background-color: #088080;
+    background-color: #003366;
     transform: translateY(-2px);
 }
 
@@ -99,7 +99,7 @@
 .back-link {
     display: inline-block;
     margin-top: 20px;
-    color: #088080;
+    color: #00477d;
     font-weight: 500;
 }
 

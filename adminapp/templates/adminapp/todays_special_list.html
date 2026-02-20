@@ -30,7 +30,7 @@
         }
 
         th {
-            background-color: #088080;
+            background-color: #00477d;
             color: white;
         }
 
@@ -45,19 +45,20 @@
 
         a {
             text-decoration: none;
-            color: #088080;
+            color: #00477d;
             font-weight: 500;
         }
 
         a:hover {
             text-decoration: underline;
+            color: #003366;
         }
 
         .add-btn {
             display: inline-block;
             margin-top: 20px;
             padding: 10px 20px;
-            background-color: #088080;
+            background-color: #00477d;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -66,7 +67,7 @@
         }
 
         .add-btn:hover {
-            background-color: #218838;
+            background-color: #003366;
         }
 
         .delete-btn {
@@ -82,10 +83,11 @@
         }
         
         .date-filter {
-            background: #e8f7f6;
+            background: #e6f0fa;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+            border-left: 4px solid #00477d;
         }
         
         .info-badge {
@@ -99,7 +101,7 @@
     </style>
 
 <div class="container">
-    <h2 class="mb-4 fw-bold" style="color: #088080;">Today's Special Items</h2>
+    <h2 class="mb-4 fw-bold" style="color: #00477d;">Today's Special Items</h2>
     
     {% if messages %}
     <div class="messages">
@@ -225,8 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cellDate = `${year}-${monthMap[month]}-${day.padStart(2, '0')}`;
                 
                 if (cellDate === todayFormatted) {
-                    cell.style.backgroundColor = '#e8f7f6';
+                    cell.style.backgroundColor = '#e6f0fa';
                     cell.style.fontWeight = 'bold';
+                    cell.style.borderLeft = '3px solid #00477d';
                 }
             }
         }

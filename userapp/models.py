@@ -389,7 +389,7 @@ class FeedbackItem(models.Model):
     feedback = models.ForeignKey(
         Feedback, on_delete=models.CASCADE, related_name="items"
     )
-    food_item = models.ForeignKey(TblMenuItem, on_delete=models.CASCADE)
+    food_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
 
     rating = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
