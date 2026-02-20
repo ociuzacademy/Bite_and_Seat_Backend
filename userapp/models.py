@@ -124,7 +124,7 @@ class Order(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
 
-    time_slot = models.ForeignKey(TblTimeSlot,on_delete=models.CASCADE, null=True, blank=True)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, null=True, blank=True)
     number_of_persons = models.PositiveIntegerField(null=True, blank=True)
 
     # Instead of ManyToMany seats — link to table only

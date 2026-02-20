@@ -604,10 +604,13 @@ class UserOrderSerializer(serializers.ModelSerializer):
     booking_status = serializers.CharField(read_only=True)
     
     def get_time_slot(self, obj):
-        if obj.time_slot:
-            # Remove (OLD MODEL) from display
-            time_slot_str = str(obj.time_slot)
-            return time_slot_str.replace(" (OLD MODEL)", "")
+        try:
+            if obj.time_slot:
+                # Remove (OLD MODEL) from display
+                time_slot_str = str(obj.time_slot)
+                return time_slot_str.replace(" (OLD MODEL)", "")
+        except:
+            pass
         return "No time slot assigned"
 
     class Meta:
