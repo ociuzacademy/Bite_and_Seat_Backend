@@ -434,6 +434,146 @@ def admin_cancelled_orders(request):
     orders = Order.objects.filter(booking_status='cancelled').order_by('-date', '-id')
     return render(request, 'adminapp/admin_cancelled_orders.html', {'orders': orders})
 
+def admin_process_refund(request, order_id):
+    """
+    Process refund for a cancelled order
+    Changes payment status from 'paid' to 'refund_initiated'
+    """
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Ensure order is cancelled
+    if order.booking_status != 'cancelled':
+        messages.error(request, f"Order #{order_id} is not cancelled. Refund can only be processed for cancelled orders.")
+        return redirect('admin_cancelled_orders')
+    
+    # Update payment status to refund_initiated if it was paid
+    refund_processed = False
+    
+    if order.table_payment_status == 'paid':
+        order.table_payment_status = 'refund_initiated'
+        refund_processed = True
+    
+    if order.food_payment_status == 'paid':
+        order.food_payment_status = 'refund_initiated'
+        refund_processed = True
+    
+    if refund_processed:
+        order.save()
+        
+        # Send refund notification email
+        try:
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.utils.html import strip_tags
+            from django.utils import timezone
+            
+            if order.user and order.user.email:
+                subject = f"Refund Initiated - Order #{order_id}"
+                
+                context = {
+                    'order': order,
+                    'user': order.user,
+                    'refund_amount': order.total_amount,
+                    'refund_date': timezone.now(),
+                }
+                
+                html_message = render_to_string('email/refund_initiated.html', context)
+                plain_message = strip_tags(html_message)
+                
+                send_mail(
+                    subject=subject,
+                    message=plain_message,
+                    from_email='noreply@biteandseat.com',
+                    recipient_list=[order.user.email],
+                    html_message=html_message,
+                    fail_silently=False
+                )
+                print(f"Refund initiated email sent to {order.user.email}")
+        except Exception as e:
+            print(f"Failed to send refund email: {e}")
+        
+        messages.success(request, f"Refund initiated for Order #{order_id}. Payment status updated to 'Refund Initiated'.")
+    else:
+        messages.warning(request, f"No paid items found to refund for Order #{order_id}.")
+    
+    return redirect('admin_cancelled_orders')
+
+def admin_complete_refund(request, order_id):
+    """
+    Mark refund as completed (when customer collects money)
+    Changes payment status from 'refund_initiated' to 'refunded'
+    """
+    print(f"🔍 admin_complete_refund called for order #{order_id}")
+    print(f"Request method: {request.method}")
+    
+    order = get_object_or_404(Order, id=order_id)
+    
+    print(f"Order #{order.id} - Booking status: {order.booking_status}")
+    print(f"Table payment status: {order.table_payment_status}")
+    print(f"Food payment status: {order.food_payment_status}")
+    
+    # Ensure order is cancelled
+    if order.booking_status != 'cancelled':
+        print(f"❌ Order #{order_id} is not cancelled. Current status: {order.booking_status}")
+        messages.error(request, f"Order #{order_id} is not cancelled. Refund can only be completed for cancelled orders.")
+        return redirect('admin_cancelled_orders')
+    
+    # Update payment status to refunded if it was refund_initiated
+    refund_completed = False
+    
+    if order.table_payment_status == 'refund_initiated':
+        print(f"✅ Table payment changing from {order.table_payment_status} to refunded")
+        order.table_payment_status = 'refunded'
+        refund_completed = True
+    
+    if order.food_payment_status == 'refund_initiated':
+        print(f"✅ Food payment changing from {order.food_payment_status} to refunded")
+        order.food_payment_status = 'refunded'
+        refund_completed = True
+    
+    if refund_completed:
+        order.save()
+        print(f"✅ Order #{order_id} saved with new payment statuses")
+        
+        # Send refund completed email
+        try:
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.utils.html import strip_tags
+            from django.utils import timezone
+            
+            if order.user and order.user.email:
+                subject = f"Refund Completed - Order #{order_id}"
+                
+                context = {
+                    'order': order,
+                    'user': order.user,
+                    'refund_amount': order.total_amount,
+                    'completion_date': timezone.now(),
+                }
+                
+                html_message = render_to_string('email/refund_completed.html', context)
+                plain_message = strip_tags(html_message)
+                
+                send_mail(
+                    subject=subject,
+                    message=plain_message,
+                    from_email='noreply@biteandseat.com',
+                    recipient_list=[order.user.email],
+                    html_message=html_message,
+                    fail_silently=False
+                )
+                print(f"✅ Refund completed email sent to {order.user.email}")
+        except Exception as e:
+            print(f"❌ Failed to send refund email: {e}")
+        
+        messages.success(request, f"Refund completed for Order #{order_id}. Payment status updated to 'Refunded'.")
+    else:
+        print(f"❌ No refunds in progress found for Order #{order_id}")
+        messages.warning(request, f"No refunds in progress found for Order #{order_id}.")
+    
+    return redirect('admin_cancelled_orders')
+
 from django.shortcuts import render, get_object_or_404
 from userapp.models import Table
 

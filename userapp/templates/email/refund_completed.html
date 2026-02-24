@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Completed - Bite & Seat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0;
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #00477d;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 25px;
+        }
+        .success-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #00477d;
+        }
+        .info-box p {
+            margin: 10px 0;
+        }
+        .amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00477d;
+        }
+        .divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 25px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #00477d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #003366;
+        }
+        .success-note {
+            background-color: #d4edda;
+            border: 1px solid #28a745;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success-note p {
+            margin: 5px 0;
+            color: #155724;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .status-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bite & Seat</h1>
+            <p>Refund Completed</p>
+        </div>
+        
+        <div class="content">
+            <div style="text-align: center;">
+                <div class="success-badge">✅ Refund Completed</div>
+            </div>
+            
+            <h2 style="text-align: center; color: #333;">Hello {{ user.username }},</h2>
+            <p style="text-align: center; font-size: 18px;">Your refund for order #{{ order.id }} has been successfully completed.</p>
+            
+            <div class="success-note">
+                <p style="font-weight: 600;">💳 Refund Status: <span class="status-badge">Refunded</span></p>
+                <p>Your refund of <strong>₹{{ refund_amount }}</strong> has been processed.</p>
+                <p>The amount has been credited back to your original payment method.</p>
+                <p style="margin-top: 10px; font-size: 14px;">Thank you for your patience during this process.</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>Order Details</h3>
+                <p><strong>Order Number:</strong> #{{ order.id }}</p>
+                <p><strong>Order Date:</strong> {{ order.date|date:"F j, Y" }}</p>
+                <p><strong>Booking Type:</strong> 
+                    {% if order.booking_type == 'PREBOOKED' %}
+                        Prebooked (Table + Food)
+                    {% elif order.booking_type == 'TABLE_ONLY' %}
+                        Table Only
+                    {% elif order.booking_type == 'ONSPOT' %}
+                        On-the-Spot
+                    {% else %}
+                        {{ order.booking_type }}
+                    {% endif %}
+                </p>
+                {% if order.time_slot %}
+                <p><strong>Time Slot:</strong> {{ order.time_slot }}</p>
+                {% endif %}
+                <p><strong>Number of Persons:</strong> {{ order.number_of_persons|default:"Not specified" }}</p>
+            </div>
+            
+            <h3 style="margin-top: 25px;">Refund Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if order.table_charge > 0 %}
+                    <tr>
+                        <td>Table Booking Charge</td>
+                        <td>₹{{ order.table_charge }}</td>
+                        <td><span class="status-badge">Refunded</span></td>
+                    </tr>
+                    {% endif %}
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.food_item.name }} x {{ item.quantity }}</td>
+                        <td>₹{{ item.total_price }}</td>
+                        <td><span class="status-badge">Refunded</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th style="text-align: right;">Total Refund Amount:</th>
+                        <th><span class="amount">₹{{ refund_amount }}</span></th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <div style="text-align: center;">
+                <a href="http://localhost:8002/userapp/orders-list/?user_id={{ user.id }}" class="button">View Your Orders</a>
+            </div>
+            
+            <p style="text-align: center; color: #6c757d; margin-top: 25px;">
+                We hope to serve you again soon at Bite & Seat!
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>© {% now "Y" %} Bite & Seat. All rights reserved.</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>For assistance, contact us at support@biteandseat.com</p>
+        </div>
+    </div>
+</body>
+</html>

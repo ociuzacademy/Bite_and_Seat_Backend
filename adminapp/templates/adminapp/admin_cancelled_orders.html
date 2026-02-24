@@ -177,10 +177,13 @@
             <th>Date</th>
             <th>Time Slot</th>
             <th>Total (₹)</th>
+            <th>Payment Status</th>
             <th>Cancelled On</th>
-            <th>Actions</th>
+            <th>View</th>
+            <th>Refund Action</th>
           </tr>
         </thead>
+
         <tbody>
           {% for order in orders %}
           <tr class="cancelled-row">
@@ -218,6 +221,19 @@
             </td>
             <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
             <td>
+              {% if order.table_payment_status == 'paid' or order.food_payment_status == 'paid' %}
+                <span class="badge bg-success">Paid</span>
+              {% elif order.table_payment_status == 'refund_initiated' or order.food_payment_status == 'refund_initiated' %}
+                <span class="badge bg-warning" style="background-color: #ffc107 !important; color: #000 !important;">Refund Initiated</span>
+              {% elif order.table_payment_status == 'refunded' or order.food_payment_status == 'refunded' %}
+                <span class="badge bg-info" style="background-color: #17a2b8 !important;">Refunded</span>
+              {% elif order.table_payment_status == 'pending' or order.food_payment_status == 'pending' %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% else %}
+                <span class="badge bg-secondary">—</span>
+              {% endif %}
+            </td>
+            <td>
               <small>{{ order.updated_at|default:order.created_at|date:"M d, Y H:i" }}</small>
             </td>
             <td>
@@ -227,6 +243,26 @@
                  <i class="fas fa-eye me-1"></i> View
               </a>
             </td>
+            <td>
+              {% if order.table_payment_status == 'refund_initiated' or order.food_payment_status == 'refund_initiated' %}
+              <a href="{% url 'admin_complete_refund' order.id %}" 
+                 class="btn btn-sm btn-success fw-semibold"
+                 title="Mark refund as completed (customer collected)"
+                 onclick="return confirm('Mark refund as completed for Order #{{ order.id }}? This will change status to Refunded.');">
+                 <i class="fas fa-check-circle me-1"></i> Refund
+              </a>
+              {% elif order.table_payment_status == 'paid' or order.food_payment_status == 'paid' %}
+              <a href="{% url 'admin_process_refund' order.id %}" 
+                 class="btn btn-sm btn-warning fw-semibold"
+                 title="Initiate refund for this order"
+                 onclick="return confirm('Initiate refund for Order #{{ order.id }}? This will mark payment as Refund Initiated and notify the customer.');">
+                 <i class="fas fa-undo-alt me-1"></i> Initiate Refund
+              </a>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
           </tr>
           {% empty %}
           <tr>
