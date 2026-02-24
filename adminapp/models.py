@@ -122,7 +122,7 @@ class Table(models.Model):
 class Seat(models.Model):
     table = models.ForeignKey(Table, related_name='seats', on_delete=models.CASCADE)
     seat_number = models.PositiveIntegerField()
-    seat_price = models.DecimalField(max_digits=6, decimal_places=2, default=5.00)
+    seat_price = models.DecimalField(max_digits=6, decimal_places=2, default=2.00)
     is_occupied = models.BooleanField(default=False)  # New field
 
     class Meta:

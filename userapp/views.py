@@ -986,6 +986,15 @@ def cancel_order(request):
         order_seat.delete()
         seats_cancelled += 1
     
+    # Calculate refund amount before resetting
+    refund_amount = order.total_amount
+    
+    # Update payment status to refund_initiated first, then later to refunded
+    if order.table_payment_status == 'paid':
+        order.table_payment_status = 'refund_initiated'
+    if order.food_payment_status == 'paid':
+        order.food_payment_status = 'refund_initiated'
+    
     # Reset order tables and charges
     order.tables = []
     order.table_charge = 0
@@ -1002,15 +1011,33 @@ def cancel_order(request):
         if order.user and order.user.email:
             subject = f"Order Cancellation - Order #{order_id}"
             
-            context = {
-                'order': order,
-                'seats_freed': seats_cancelled,
-                'user': order.user,
-                'cancellation_time': timezone.now(),
-                'cancellation_policy': '1 hour'  # Add policy info
-            }
+            # Determine which email template to use
+            if refund_amount > 0:
+                # Send refund email
+                subject = f"Refund Confirmation - Order #{order_id}"
+                template_name = 'email/order_refund.html'
+                context = {
+                    'order': order,
+                    'seats_freed': seats_cancelled,
+                    'user': order.user,
+                    'cancellation_time': timezone.now(),
+                    'cancellation_policy': '30 minutes',
+                    'refund_amount': refund_amount,
+                }
+            else:
+                # Send regular cancellation email
+                subject = f"Order Cancellation - Order #{order_id}"
+                template_name = 'email/order_cancellation.html'
+                context = {
+                    'order': order,
+                    'seats_freed': seats_cancelled,
+                    'user': order.user,
+                    'cancellation_time': timezone.now(),
+                    'cancellation_policy': '30 minutes',
+                }
             
-            html_message = render_to_string('email/order_cancellation.html', context)
+            # Use the appropriate template based on refund amount
+            html_message = render_to_string(template_name, context)
             plain_message = strip_tags(html_message)
             
             send_mail(
@@ -1021,7 +1048,11 @@ def cancel_order(request):
                 html_message=html_message,
                 fail_silently=False
             )
-            print(f"Cancellation email sent to {order.user.email}")
+            
+            if refund_amount > 0:
+                print(f"Refund email sent to {order.user.email} for ₹{refund_amount}")
+            else:
+                print(f"Cancellation email sent to {order.user.email}")
     except Exception as e:
         print(f"Failed to send cancellation email: {e}")
 

@@ -103,7 +103,7 @@
 
     <!-- Header -->
     <div class="page-header mb-4">
-      <h3>All Orders</h3>
+      <h3>Bookings</h3>
       <span class="badge badge-count px-3 py-2 fs-6">
         Total Orders: {{ orders|length }}
       </span>
@@ -120,6 +120,7 @@
             <th>Date</th>
             <th>Time Slot</th>
             <th>Total (₹)</th>
+            <th>Payment Status</th>
             <th>Booking Status</th>
             <th>Actions</th>
           </tr>
@@ -150,27 +151,42 @@
             <td>{{ order.date }}</td>
             <td>{{ order.time_slot|default:"None" }}</td>
             <td><strong>₹{{ order.total_amount|default:"0" }}</strong></td>
+            
             <td>
-  {% if order.booking_status == 'pending' %}
-    <span class="badge bg-warning text-dark">
-      {{ order.get_booking_status_display }}
-    </span>
-  {% elif order.booking_status == 'confirmed' %}
-    <span class="badge bg-success">
-      {{ order.get_booking_status_display }}
-    </span>
-  {% elif order.booking_status == 'cancelled' %}
-    <span class="badge bg-danger">
-      {{ order.get_booking_status_display }}
-    </span>
-  {% elif order.booking_status == 'completed' %}
-    <span class="badge bg-primary">
-      {{ order.get_booking_status_display }}
-    </span>
-  {% else %}
-    <span class="badge bg-secondary">Unknown</span>
-  {% endif %}
-</td>
+              {% if order.table_payment_status == 'paid' and order.food_payment_status == 'paid' %}
+                <span class="badge bg-success">Paid</span>
+              {% elif order.table_payment_status == 'refund_initiated' or order.food_payment_status == 'refund_initiated' %}
+                <span class="badge bg-warning" style="background-color: #ffc107 !important; color: #000 !important;">Refund Initiated</span>
+              {% elif order.table_payment_status == 'refunded' or order.food_payment_status == 'refunded' %}
+                <span class="badge bg-info" style="background-color: #17a2b8 !important;">Refunded</span>
+              {% elif order.table_payment_status == 'pending' or order.food_payment_status == 'pending' %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% else %}
+                <span class="badge bg-secondary">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if order.booking_status == 'pending' %}
+                <span class="badge bg-warning text-dark">
+                  {{ order.get_booking_status_display }}
+                </span>
+              {% elif order.booking_status == 'confirmed' %}
+                <span class="badge bg-success">
+                  {{ order.get_booking_status_display }}
+                </span>
+              {% elif order.booking_status == 'cancelled' %}
+                <span class="badge bg-danger">
+                  {{ order.get_booking_status_display }}
+                </span>
+              {% elif order.booking_status == 'completed' %}
+                <span class="badge bg-primary">
+                  {{ order.get_booking_status_display }}
+                </span>
+              {% else %}
+                <span class="badge bg-secondary">Unknown</span>
+              {% endif %}
+            </td>
 
             <td>
               <div class="btn-group">
@@ -191,7 +207,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="text-muted py-4">
+            <td colspan="8" class="text-muted py-4">
               No orders found at the moment.
             </td>
           </tr>

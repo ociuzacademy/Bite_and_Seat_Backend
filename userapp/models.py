@@ -137,8 +137,8 @@ class Order(models.Model):
     # Split payment tracking
     table_payment_mode = models.CharField(max_length=50, default='cash', choices= PAYMENT_METHODS)
     food_payment_mode = models.CharField(max_length=50, default='cash', choices= PAYMENT_METHODS)
-    table_payment_status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending'), ('paid', 'Paid')])
-    food_payment_status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending'), ('paid', 'Paid')])
+    table_payment_status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending'), ('paid', 'Paid'), ('refund_initiated', 'Refund Initiated'), ('refunded', 'Refunded')])
+    food_payment_status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending'), ('paid', 'Paid'), ('refund_initiated', 'Refund Initiated'), ('refunded', 'Refunded')])
 
     is_completed = models.BooleanField(default=False) #make true after scanning QR code at restaurant
 
