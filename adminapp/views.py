@@ -634,6 +634,12 @@ def admin_select_food(request, order_id):
     # show menu based on date
     daily_menu = DailyMenu.objects.filter(date=order.date).first()
     food_items = daily_menu.items.all() if daily_menu else []
+    
+    # Return the template for GET requests
+    return render(request, 'adminapp/admin_select_food.html', {
+        'order': order,
+        'food_items': food_items
+    })
 
 
 
@@ -1404,12 +1410,12 @@ def todays_special_page(request):
     if request.method == 'POST' and 'delete_id' in request.POST:
         try:
             special_id = request.POST.get('delete_id')
-            special = TodaysSpecial.objects.get(id=special_id)
+            special = MenuItem.objects.get(id=special_id, is_todays_special=True)
             special_name = special.name
             special.delete()
             messages.success(request, f"Today's special '{special_name}' deleted successfully!")
             return redirect('todays_special_page')
-        except TodaysSpecial.DoesNotExist:
+        except MenuItem.DoesNotExist:
             messages.error(request, "Today's special item not found.")
         except Exception as e:
             messages.error(request, f"Error deleting item: {str(e)}")
@@ -1426,8 +1432,11 @@ def todays_special_page(request):
     else:
         selected_date = date.today()
     
-    # Order by category and name for better organization
-    specials = TodaysSpecial.objects.filter(date=selected_date).order_by('category__name', 'name')
+    # Get today's special items from MenuItem model
+    specials = MenuItem.objects.filter(
+        is_todays_special=True, 
+        special_date=selected_date
+    ).order_by('category__name', 'name')
     
     return render(request, 'adminapp/todays_special_list.html', {
         'specials': specials,
@@ -1465,23 +1474,20 @@ def add_todays_special_page(request):
                 image=image
             )
             
-            # Create/update in new MenuItem table
-            menu_item, created = MenuItem.objects.update_or_create(
+            # Create in new MenuItem table - use create instead of update_or_create
+            # to ensure new items are always created
+            menu_item = MenuItem.objects.create(
                 name=name,
                 category_id=category_id,
-                defaults={
-                    'rate': rate,
-                    'item_per_plate': item_per_plate,
-                    'image': image,
-                    'is_todays_special': True,
-                    'special_date': date_obj
-                }
+                rate=rate,
+                item_per_plate=item_per_plate,
+                image=image,
+                is_todays_special=True,
+                special_date=date_obj
             )
+            print(f"✅ Created new MenuItem: {name} (ID: {menu_item.id})")
             
-            if created:
-                print(f"✅ Created new MenuItem: {name} (ID: {menu_item.id})")
-            else:
-                print(f"✅ Updated existing MenuItem: {name} (ID: {menu_item.id})")
+            print(f"✅ Created new MenuItem: {name} (ID: {menu_item.id})")
             
             messages.success(request, f"Today's special '{name}' added successfully!")
             
@@ -1502,7 +1508,7 @@ def add_todays_special_page(request):
 
 def edit_todays_special(request, special_id):
     """Edit a today's special item"""
-    special = get_object_or_404(TodaysSpecial, id=special_id)
+    special = get_object_or_404(MenuItem, id=special_id, is_todays_special=True)
     categories = Category.objects.all()
     
     if request.method == 'POST':
@@ -1613,44 +1619,15 @@ def admin_add_food_to_order(request, order_id):
         for special in todays_specials:
             qty = int(request.POST.get(f"special_{special.id}", 0))
             if qty > 0:
-                # Find corresponding TblMenuItem for today's special
-                try:
-                    # Try to find menu item with same name and category
-                    menu_item = TblMenuItem.objects.get(
-                        name=special.name,
-                        category=special.category
-                    )
-                    
-                    OrderItem.objects.create(
-                        order=order,
-                        food_item=menu_item,  # ✅ Use TblMenuItem instance
-                        quantity=qty,
-                        price=special.rate,
-                        total_price=special.rate * qty
-                    )
-                    items_added += qty
-                except TblMenuItem.DoesNotExist:
-                    # If menu item doesn't exist, create a temporary one
-                    messages.warning(request, 
-                        f"Menu item '{special.name}' not found. Using today's special rate.")
-                    
-                    # Create a temporary TblMenuItem
-                    menu_item = TblMenuItem.objects.create(
-                        name=special.name,
-                        category=special.category,
-                        rate=special.rate,
-                        item_per_plate=special.item_per_plate,
-                        image=special.image if special.image else None
-                    )
-                    
-                    OrderItem.objects.create(
-                        order=order,
-                        food_item=menu_item,
-                        quantity=qty,
-                        price=special.rate,
-                        total_price=special.rate * qty
-                    )
-                    items_added += qty
+                # Use MenuItem directly (they're already MenuItem objects)
+                OrderItem.objects.create(
+                    order=order,
+                    food_item=special,  # ✅ Use MenuItem directly
+                    quantity=qty,
+                    price=special.rate,
+                    total_price=special.rate * qty
+                )
+                items_added += qty
 
         if items_added > 0:
             order.update_total()
