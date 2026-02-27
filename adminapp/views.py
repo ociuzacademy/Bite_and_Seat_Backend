@@ -631,7 +631,7 @@ def admin_select_food(request, order_id):
         order.save()
         return redirect('admin_order_detail', order_id=order.id)
 
-    # show menu based on date
+    # Show menu based on date
     daily_menu = DailyMenu.objects.filter(date=order.date).first()
     food_items = daily_menu.items.all() if daily_menu else []
     
