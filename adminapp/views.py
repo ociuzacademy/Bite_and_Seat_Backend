@@ -863,7 +863,7 @@ def scan_qr_complete_order(request):
                 order_date = order.date
                 time_slot = order.time_slot
                 
-                # Validate date
+                # Validate dateu
                 if order_date != current_date:
                     messages.error(request, f"This booking is for {order_date}, not today. Cannot check in.")
                     order_details = {
